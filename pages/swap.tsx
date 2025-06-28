@@ -7,9 +7,11 @@ import { fetchQuote } from '../lib/fetchQuote'
 import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
 import { SWAP_ROUTER_ADDRESS } from '../lib/addresses'
+import { useDexSettings } from '../context/DexSettingsContext'
 
 export default function Home() {
   const { tokens } = useTokens()
+  const { poolFee } = useDexSettings()
   const [provider, setProvider] = useState<ethers.BrowserProvider>()
   const [signer, setSigner] = useState<ethers.JsonRpcSigner>()
   const [account, setAccount] = useState('')
@@ -45,7 +47,7 @@ const connectWallet = async () => {
 
   const handleSwap = async () => {
     if (!signer || !amountIn) return
-    await executeSwap(signer, fromToken, toToken, amountIn)
+    await executeSwap(signer, fromToken, toToken, amountIn, poolFee)
   }
 
   // fetchQuote を呼び出して amountOut を表示
@@ -53,14 +55,14 @@ const connectWallet = async () => {
     const getQuote = async () => {
       if (!provider || !amountIn || !fromToken || !toToken) return
       try {
-        const amountOut = await fetchQuote(provider, fromToken, toToken, amountIn)
+        const amountOut = await fetchQuote(provider, fromToken, toToken, amountIn, poolFee)
         setQuotedAmountOut(amountOut)
       } catch (err) {
         setQuotedAmountOut('failed')
       }
     }
     getQuote()
-  }, [amountIn, fromToken, toToken, provider])
+  }, [amountIn, fromToken, toToken, provider, poolFee])
 
   return (
     <main style={{ padding: 20 }}>

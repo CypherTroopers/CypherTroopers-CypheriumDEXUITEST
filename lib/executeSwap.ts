@@ -7,14 +7,15 @@ export async function executeSwap(
   signer: ethers.JsonRpcSigner,
   tokenIn: TokenInfo,
   tokenOut: TokenInfo,
-  amountIn: string
+  amountIn: string,
+  fee: number
 ) {
   const router = new ethers.Contract(SWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer)
 
   const params = {
     tokenIn: tokenIn.address,
     tokenOut: tokenOut.address,
-    fee: 3000,
+    fee,
     recipient: await signer.getAddress(),
     deadline: Math.floor(Date.now() / 1000) + 60 * 10,
     amountIn: ethers.parseUnits(amountIn, tokenIn.decimals),

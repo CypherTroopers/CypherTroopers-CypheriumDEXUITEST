@@ -1,5 +1,6 @@
 // components/AddLiquidityForm.tsx
 import { useState } from 'react';
+import { useDexSettings } from '../context/DexSettingsContext';
 import { approveToken } from '../lib/approve';
 import { addLiquidity, ensurePoolInitialized } from '../lib/addLiquidity';
 import { ethers } from 'ethers';
@@ -16,12 +17,11 @@ export default function AddLiquidityForm({ provider }: Props) {
   const [token1, setToken1] = useState('');
   const [amount0, setAmount0] = useState('');
   const [amount1, setAmount1] = useState('');
-  const [fee, setFee] = useState(3000);
   const [priceMin, setPriceMin] = useState('0.95');
   const [priceMax, setPriceMax] = useState('1.05');
   const [status, setStatus] = useState('');
 
-  const SLIPPAGE = 0.5; // %
+  const { poolFee, setPoolFee, slippage, setSlippage } = useDexSettings();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ export default function AddLiquidityForm({ provider }: Props) {
 
       setStatus(`tickLower=${tickLower}, tickUpper=${tickUpper}`);
       setStatus('Initializing pool if needed...');
-      await ensurePoolInitialized(signer, token0, token1, fee, midPrice);
+      await ensurePoolInitialized(signer, token0, token1, poolFee, midPrice);
 
       const parsedAmount0 = ethers.parseUnits(amount0, decimals0).toString();
       const parsedAmount1 = ethers.parseUnits(amount1, decimals1).toString();
@@ -67,12 +67,12 @@ export default function AddLiquidityForm({ provider }: Props) {
         signer,
         token0,
         token1,
-        fee,
+        poolFee,
         tickLower,
         tickUpper,
         parsedAmount0,
         parsedAmount1,
-        SLIPPAGE
+        slippage
       );
 
       setStatus('✅ Success!');
@@ -94,6 +94,21 @@ export default function AddLiquidityForm({ provider }: Props) {
 
       <input type="text" placeholder="Min price (ex: 0.95)" value={priceMin} onChange={e => setPriceMin(e.target.value)} required />
       <input type="text" placeholder="Max price (ex: 1.05)" value={priceMax} onChange={e => setPriceMax(e.target.value)} required />
+      
+      <input
+        type="number"
+        placeholder="Pool fee"
+        value={poolFee}
+        onChange={e => setPoolFee(Number(e.target.value))}
+      />
+
+      <input
+        type="number"
+        placeholder="Slippage (%)"
+        step="0.1"
+        value={slippage}
+        onChange={e => setSlippage(Number(e.target.value))}
+      />
 
       <button type="submit">Add Liquidity</button>
 

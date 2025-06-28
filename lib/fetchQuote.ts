@@ -11,12 +11,12 @@ export async function fetchQuote(
   provider: ethers.Provider,
   fromToken: TokenInfo,
   toToken: TokenInfo,
-  amountIn: string
+  amountIn: string,
+  fee: number
 ): Promise<string> {
   const quoter = new ethers.Contract(QUOTER_ADDRESS, ABI, provider)
 
   const amountInRaw = ethers.parseUnits(amountIn, fromToken.decimals)
-  const fee = 3000 // 0.3% 決め打ち（後で動的に設定可能）
 
   const { amountOut } = await quoter.quoteExactInputSingle(
     fromToken.address,
