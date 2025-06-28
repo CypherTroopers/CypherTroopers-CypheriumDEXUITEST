@@ -1,11 +1,13 @@
 // lib/addLiquidity.ts
 import { Contract } from 'ethers'
-import NonfungiblePositionManagerABI from '../abi/NonfungiblePositionManager.json'
+import NonfungiblePositionManagerABIJson from '../abi/NonfungiblePositionManager.json';
 import { ethers } from 'ethers'
 import { encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
 
 import { POSITION_MANAGER_ADDRESS } from './addresses'
 
+const NonfungiblePositionManagerABI =
+  (NonfungiblePositionManagerABIJson as any).default || NonfungiblePositionManagerABIJson;
 /**
  * token のアドレスをソートし、対応する数量も並び替える
  */
@@ -133,9 +135,9 @@ export async function addLiquidity(
     deadline
   }
 
-  // Static call to detect reverts and surface error messages
+// Use staticCall to detect reverts and surface error messages
   try {
-    await (positionManager as any).callStatic.mint(params)
+    await positionManager.mint.staticCall(params)
   } catch (err: any) {
     const errorMsg = err?.shortMessage || err?.message || String(err)
     throw new Error(errorMsg)
