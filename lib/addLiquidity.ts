@@ -49,6 +49,9 @@ export async function ensurePoolInitialized(
   fee: number,
   price: number
 ) {
+  if (!POSITION_MANAGER_ADDRESS) {
+    throw new Error('POSITION_MANAGER_ADDRESS is not set');
+  }
   const sorted = sortTokens(token0, token1, '0', '0')
   const finalPrice = sorted.token0 === token0 ? price : 1 / price
   const positionManager = new Contract(
@@ -61,7 +64,7 @@ export async function ensurePoolInitialized(
     Math.floor(finalPrice * 1e6).toString(),
     '1000000'
   )
-  
+
   // ✅ hex に変換
   const sqrtPriceX96Hex = jsbiToHex(sqrtPriceX96);
 
@@ -100,6 +103,9 @@ export async function addLiquidity(
   const sorted = sortTokens(token0, token1, amount0Desired, amount1Desired)
   const finalTickLower = sorted.token0 === token0 ? tickLower : -tickUpper
   const finalTickUpper = sorted.token0 === token0 ? tickUpper : -tickLower
+  if (!POSITION_MANAGER_ADDRESS) {
+    throw new Error('POSITION_MANAGER_ADDRESS is not set');
+  }
   const positionManager = new Contract(
     POSITION_MANAGER_ADDRESS,
     NonfungiblePositionManagerABI,
@@ -129,13 +135,14 @@ export async function addLiquidity(
 
   // Static call to detect reverts and surface error messages
   try {
-    await positionManager.getFunction('mint').staticCall(params)
+    await (positionManager as any).callStatic.mint(params)
   } catch (err: any) {
     const errorMsg = err?.shortMessage || err?.message || String(err)
     throw new Error(errorMsg)
   }
 
   const tx = await positionManager.mint(params)
-  
+
   return tx.wait()
 }
+

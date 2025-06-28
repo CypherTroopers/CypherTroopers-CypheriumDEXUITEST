@@ -27,7 +27,10 @@ export default function AddLiquidityForm({ provider }: Props) {
     e.preventDefault();
 
     try {
-      // 入力バリデーション（BigNumberishエラー対策）
+      if (!POSITION_MANAGER_ADDRESS) {
+        throw new Error('POSITION_MANAGER_ADDRESS is not set');
+      }
+     // 入力バリデーション（BigNumberishエラー対策）
       if (!amount0 || isNaN(Number(amount0)) || Number(amount0) <= 0) {
         throw new Error("Amount Token0 must be a valid number greater than 0");
       }

@@ -8,6 +8,9 @@ export async function removeLiquidity(
   tokenId: number,
   liquidity: string
 ) {
+  if (!POSITION_MANAGER_ADDRESS) {
+    throw new Error('POSITION_MANAGER_ADDRESS is not set');
+  }
   const manager = new Contract(
     POSITION_MANAGER_ADDRESS,
     NonfungiblePositionManagerABI,

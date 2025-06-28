@@ -23,6 +23,9 @@ export default function PoolsPage() {
       if (!provider) return
       const signer = await provider.getSigner()
       const address = await signer.getAddress()
+      if (!POSITION_MANAGER_ADDRESS) {
+        throw new Error('POSITION_MANAGER_ADDRESS is not set');
+      }
       const manager = new ethers.Contract(
         POSITION_MANAGER_ADDRESS,
         NonfungiblePositionManagerABI,
@@ -50,6 +53,9 @@ export default function PoolsPage() {
     const signer = await provider.getSigner()
     await removeLiquidity(signer, tokenId, liquidity)
     // refresh positions
+    if (!POSITION_MANAGER_ADDRESS) {
+      throw new Error('POSITION_MANAGER_ADDRESS is not set');
+    }
     const manager = new ethers.Contract(
       POSITION_MANAGER_ADDRESS,
       NonfungiblePositionManagerABI,

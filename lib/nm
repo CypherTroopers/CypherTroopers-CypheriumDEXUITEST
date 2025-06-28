@@ -1,0 +1,44 @@
+import { JsonRpcProvider, Contract } from "ethers";
+
+async function checkDeployment() {
+  const provider = new JsonRpcProvider("https://make-cph-great-again.community");
+
+  const txHash = "0xe8b0baa9090c520f8a3d9fe4c1c14dfaee22834da4994b4a39ca5bf19241dcb4";
+  const receipt = await provider.getTransactionReceipt(txHash);
+  console.log("Receipt:", receipt);
+
+  let contractAddress = receipt.contractAddress;
+  if (contractAddress === null) {
+    contractAddress = receipt.to;
+    console.log("This was not a deploy transaction.");
+  }
+
+  console.log("Contract address (to/check):", contractAddress);
+
+  const code = await provider.getCode(contractAddress);
+  console.log("Bytecode at contract address:", code);
+
+  if (code === "0x") {
+    console.log("⚠ コントラクトは存在しません。再 deploy が必要です。");
+  } else {
+    console.log("✅ コントラクトは存在します！");
+  }
+
+  // ✅ ここ修正
+  const factoryAddress = "0x7f3b459Ddbbc68d46DD9cC3664E98dBa8ddBdf4C";
+
+  const factoryAbi = [
+    "function getPool(address,address,uint24) view returns (address)"
+  ];
+
+  const factory = new Contract(factoryAddress, factoryAbi, provider);
+
+  const token0 = "0x2610c6FCB401C072657d8fb6C1F5839FdAc109C1";
+  const token1 = "0x7A6C53B0ADC6730C6FF70b28545E46CFc12Fc116";
+  const fee = 3000;
+
+  const poolAddress = await factory.getPool(token0, token1, fee);
+  console.log("Pool address:", poolAddress);
+}
+
+checkDeployment().catch(console.error);
