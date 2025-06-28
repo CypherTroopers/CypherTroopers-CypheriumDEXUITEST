@@ -7,6 +7,31 @@ import { encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
 import { POSITION_MANAGER_ADDRESS } from './addresses'
 
 /**
+ * token のアドレスをソートし、対応する数量も並び替える
+ */
+function sortTokens(
+  tokenA: string,
+  tokenB: string,
+  amountADesired: string,
+  amountBDesired: string
+) {
+  if (BigInt(tokenA.toLowerCase()) < BigInt(tokenB.toLowerCase())) {
+    return {
+      token0: tokenA,
+      token1: tokenB,
+      amount0Desired: amountADesired,
+      amount1Desired: amountBDesired,
+    }
+  }
+  return {
+    token0: tokenB,
+    token1: tokenA,
+    amount0Desired: amountBDesired,
+    amount1Desired: amountADesired,
+  }
+}
+
+/**
  * encodeSqrtRatioX96 の結果(JSBI)を hex string に変換する
  */
 function jsbiToHex(jsbiValue: any): string {
@@ -24,6 +49,8 @@ export async function ensurePoolInitialized(
   fee: number,
   price: number
 ) {
+  const sorted = sortTokens(token0, token1, '0', '0')
+  const finalPrice = sorted.token0 === token0 ? price : 1 / price
   const positionManager = new Contract(
     POSITION_MANAGER_ADDRESS,
     NonfungiblePositionManagerABI,
@@ -31,7 +58,7 @@ export async function ensurePoolInitialized(
   )
 
   const sqrtPriceX96 = encodeSqrtRatioX96(
-    Math.floor(price * 1e6).toString(),
+    Math.floor(finalPrice * 1e6).toString(),
     '1000000'
   )
   
@@ -40,8 +67,8 @@ export async function ensurePoolInitialized(
 
   try {
     const tx = await positionManager.createAndInitializePoolIfNecessary(
-      token0,
-      token1,
+      sorted.token0,
+      sorted.token1,
       fee,
       sqrtPriceX96Hex
     )
@@ -70,6 +97,9 @@ export async function addLiquidity(
   amount1Desired: string,
   slippage: number             // 例: 0.5 (%)
 ) {
+  const sorted = sortTokens(token0, token1, amount0Desired, amount1Desired)
+  const finalTickLower = sorted.token0 === token0 ? tickLower : -tickUpper
+  const finalTickUpper = sorted.token0 === token0 ? tickUpper : -tickLower
   const positionManager = new Contract(
     POSITION_MANAGER_ADDRESS,
     NonfungiblePositionManagerABI,
@@ -78,17 +108,17 @@ export async function addLiquidity(
 
   const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
 
-  const amount0Min = BigInt(amount0Desired) * BigInt(1000 - slippage * 10) / BigInt(1000);
-  const amount1Min = BigInt(amount1Desired) * BigInt(1000 - slippage * 10) / BigInt(1000);
+  const amount0Min = BigInt(sorted.amount0Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
+  const amount1Min = BigInt(sorted.amount1Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
 
   const tx = await positionManager.mint({
-    token0,
-    token1,
+    token0: sorted.token0,
+    token1: sorted.token1,
     fee,
-    tickLower,
-    tickUpper,
-    amount0Desired,
-    amount1Desired,
+    tickLower: finalTickLower,
+    tickUpper: finalTickUpper,
+    amount0Desired: sorted.amount0Desired,
+    amount1Desired: sorted.amount1Desired,
     amount0Min: amount0Min.toString(),
     amount1Min: amount1Min.toString(),
     recipient: await signer.getAddress(),

@@ -5,7 +5,7 @@ import { approveToken } from '../lib/approve';
 import { addLiquidity, ensurePoolInitialized } from '../lib/addLiquidity';
 import { ethers } from 'ethers';
 import ERC20ABI from '../lib/abis/ERC20.json';
-import { getTickFromPrice } from '../lib/tickMath';
+import { getTickFromPrice, nearestUsableTick } from '../lib/tickMath'
 import { POSITION_MANAGER_ADDRESS } from '../lib/addresses';
 
 interface Props {
@@ -48,8 +48,10 @@ export default function AddLiquidityForm({ provider }: Props) {
       const decimals0 = await erc20Token0.decimals();
       const decimals1 = await erc20Token1.decimals();
 
-      const tickLower = getTickFromPrice(parseFloat(priceMin));
-      const tickUpper = getTickFromPrice(parseFloat(priceMax));
+      const rawTickLower = getTickFromPrice(parseFloat(priceMin))
+      const rawTickUpper = getTickFromPrice(parseFloat(priceMax))
+      const tickLower = nearestUsableTick(rawTickLower, poolFee)
+      const tickUpper = nearestUsableTick(rawTickUpper, poolFee)
       const midPrice = (parseFloat(priceMin) + parseFloat(priceMax)) / 2;
 
       setStatus(`tickLower=${tickLower}, tickUpper=${tickUpper}`);
