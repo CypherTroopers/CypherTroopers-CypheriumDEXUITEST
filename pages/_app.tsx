@@ -3,6 +3,7 @@ import '../styles/globals.css'
 import Navbar from '../components/Navbar'
 import { TokensProvider } from '../context/TokensContext'
 import { WalletProvider } from '../context/WalletContext'
+import { DexSettingsProvider } from '../context/DexSettingsContext'
 import { appWithTranslation } from 'next-i18next'
 
 function MyApp({ Component, pageProps }: AppProps) {

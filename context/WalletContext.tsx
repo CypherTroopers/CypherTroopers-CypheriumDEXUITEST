@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 interface WalletContextValue {
   account: string
   provider?: ethers.BrowserProvider
+  signer?: ethers.JsonRpcSigner
   connectWallet: () => Promise<void>
 }
 
@@ -12,19 +13,21 @@ const WalletContext = createContext<WalletContextValue | undefined>(undefined)
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState('')
   const [provider, setProvider] = useState<ethers.BrowserProvider>()
+  const [signer, setSigner] = useState<ethers.JsonRpcSigner>()
 
   const connectWallet = async () => {
     const ethereum = (window as any).ethereum
     if (!ethereum) return alert('MetaMaskが見つかりません')
     const prov = new ethers.BrowserProvider(ethereum)
-    const signer = await prov.getSigner()
-    const addr = await signer.getAddress()
+    const signerObj = await prov.getSigner()
+    const addr = await signerObj.getAddress()
     setProvider(prov)
+    setSigner(signerObj)
     setAccount(addr)
   }
 
   return (
-    <WalletContext.Provider value={{ account, provider, connectWallet }}>
+    <WalletContext.Provider value={{ account, provider, signer, connectWallet }}>
       {children}
     </WalletContext.Provider>
   )

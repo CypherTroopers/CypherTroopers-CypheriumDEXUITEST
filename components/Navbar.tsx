@@ -23,6 +23,13 @@ const Navbar = () => {
       <Link href="/tokens" style={{ fontWeight: isActive('/tokens') ? 'bold' : 'normal' }}>{t('tokens')}</Link>
       <Link href="/pools" style={{ fontWeight: isActive('/pools') ? 'bold' : 'normal' }}>{t('pools')}</Link>
       <Link href="/dashboard" style={{ fontWeight: isActive('/dashboard') ? 'bold' : 'normal' }}>{t('dashboard')}</Link>
+      <div style={{ marginLeft: 'auto' }}>
+        {account ? (
+          <span>{addrShort(account)}</span>
+        ) : (
+          <button onClick={connectWallet}>Connect Wallet</button>
+        )}
+      </div>  
     </nav>
   )
 }

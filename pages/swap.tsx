@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { ethers } from 'ethers'
 import { TokenInfo } from '../lib/tokens'
 import { useTokens } from '../context/TokensContext'
 import { fetchQuote } from '../lib/fetchQuote'
@@ -8,13 +7,12 @@ import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
 import { SWAP_ROUTER_ADDRESS } from '../lib/addresses'
 import { useDexSettings } from '../context/DexSettingsContext'
+import { useWallet } from '../context/WalletContext'
 
 export default function Home() {
   const { tokens } = useTokens()
   const { poolFee } = useDexSettings()
-  const [provider, setProvider] = useState<ethers.BrowserProvider>()
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner>()
-  const [account, setAccount] = useState('')
+  const { provider, signer, account, connectWallet } = useWallet()
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
   const [toToken, setToToken] = useState<TokenInfo>(tokens[1])
   const [amountIn, setAmountIn] = useState('')
@@ -24,17 +22,6 @@ export default function Home() {
     if (tokens.length > 0) setFromToken(tokens[0])
     if (tokens.length > 1) setToToken(tokens[1])
   }, [tokens])
-
-const connectWallet = async () => {
-  const ethereum = (window as any).ethereum
-  if (!ethereum) return alert('MetaMaskが見つかりません')
-  const prov = new ethers.BrowserProvider(ethereum)
-  const signer = await prov.getSigner()
-  const address = await signer.getAddress()
-  setProvider(prov)
-  setSigner(signer)
-  setAccount(address)
-}
 
   useEffect(() => {
     connectWallet()
