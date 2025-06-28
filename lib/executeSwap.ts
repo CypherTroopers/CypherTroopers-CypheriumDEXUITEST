@@ -12,12 +12,16 @@ export async function executeSwap(
 ) {
   const router = new ethers.Contract(SWAP_ROUTER_ADDRESS, SWAP_ROUTER_ABI, signer)
 
+  const latestBlock = await signer.provider?.getBlock('latest')
+  const currentTimestamp = latestBlock?.timestamp ?? Math.floor(Date.now() / 1000)
+  const deadline = currentTimestamp + 60 * 10
+
   const params = {
     tokenIn: tokenIn.address,
     tokenOut: tokenOut.address,
     fee,
     recipient: await signer.getAddress(),
-    deadline: Math.floor(Date.now() / 1000) + 60 * 10,
+    deadline,
     amountIn: ethers.parseUnits(amountIn, tokenIn.decimals),
     amountOutMinimum: 0,
     sqrtPriceLimitX96: 0

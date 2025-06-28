@@ -54,6 +54,10 @@ export default function AddLiquidityForm({ provider }: Props) {
       const tickUpper = nearestUsableTick(rawTickUpper, poolFee)
       const midPrice = (parseFloat(priceMin) + parseFloat(priceMax)) / 2;
 
+      if (tickLower >= tickUpper) {
+        throw new Error('Invalid price range: Min price must be less than Max price');
+      }
+
       setStatus(`tickLower=${tickLower}, tickUpper=${tickUpper}`);
       setStatus('Initializing pool if needed...');
       await ensurePoolInitialized(signer, token0, token1, poolFee, midPrice);
@@ -80,7 +84,8 @@ export default function AddLiquidityForm({ provider }: Props) {
       setStatus('✅ Success!');
     } catch (err: any) {
       console.error(err);
-      setStatus('❌ Error: ' + err.message);
+      const errorMsg = err?.shortMessage || err?.message || String(err);
+      setStatus('❌ Error: ' + errorMsg);
     }
   };
 

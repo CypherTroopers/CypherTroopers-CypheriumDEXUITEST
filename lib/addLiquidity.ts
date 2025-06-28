@@ -112,8 +112,8 @@ export async function addLiquidity(
 
   const amount0Min = BigInt(sorted.amount0Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
   const amount1Min = BigInt(sorted.amount1Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
-
-  const tx = await positionManager.mint({
+  const recipient = await signer.getAddress()
+  const params = {
     token0: sorted.token0,
     token1: sorted.token1,
     fee,
@@ -123,9 +123,19 @@ export async function addLiquidity(
     amount1Desired: sorted.amount1Desired,
     amount0Min: amount0Min.toString(),
     amount1Min: amount1Min.toString(),
-    recipient: await signer.getAddress(),
+    recipient,
     deadline
-  });
+  }
 
-  return tx.wait();
+  // Static call to detect reverts and surface error messages
+  try {
+    await positionManager.getFunction('mint').staticCall(params)
+  } catch (err: any) {
+    const errorMsg = err?.shortMessage || err?.message || String(err)
+    throw new Error(errorMsg)
+  }
+
+  const tx = await positionManager.mint(params)
+  
+  return tx.wait()
 }
