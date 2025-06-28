@@ -1,3 +1,6 @@
+import { useTranslation } from 'next-i18next'
+
+export default function Dashboard() {
   const { t } = useTranslation('common')
   const transactions = [
     { id: 1, token: 'TestToken', amount: '100', type: 'swap' },
