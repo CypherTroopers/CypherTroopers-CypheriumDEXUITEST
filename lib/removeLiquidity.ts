@@ -14,7 +14,9 @@ export async function removeLiquidity(
     signer
   )
 
-  const deadline = Math.floor(Date.now() / 1000) + 60 * 10
+  const latestBlock = await signer.provider?.getBlock('latest')
+  const currentTimestamp = latestBlock?.timestamp ?? Math.floor(Date.now() / 1000)
+  const deadline = currentTimestamp + 60 * 10
   const params = {
     tokenId,
     liquidity,

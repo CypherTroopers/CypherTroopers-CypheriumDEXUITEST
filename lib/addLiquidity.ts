@@ -106,7 +106,9 @@ export async function addLiquidity(
     signer
   );
 
-  const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
+  const latestBlock = await signer.provider?.getBlock('latest')
+  const currentTimestamp = latestBlock?.timestamp ?? Math.floor(Date.now() / 1000)
+  const deadline = currentTimestamp + 60 * 10
 
   const amount0Min = BigInt(sorted.amount0Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
   const amount1Min = BigInt(sorted.amount1Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
