@@ -1,7 +1,7 @@
 // lib/addLiquidity.ts
-import { Contract } from 'ethers'
+
+import { Contract, parseUnits, ZeroAddress } from 'ethers'
 import NonfungiblePositionManagerABIJson from '../abi/NonfungiblePositionManager.json'
-import { ethers } from 'ethers'
 import { encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
 import JSBI from 'jsbi'
 import { POSITION_MANAGER_ADDRESS } from './addresses'
@@ -35,7 +35,7 @@ function sortTokens(
 }
 
 /**
- * encodeSqrtRatioX96 の結果(JSBI)を hex string に変換する
+ * encodeSqrtRatioX96 の結果 (JSBI) を hex string に変換する
  */
 function jsbiToHex(jsbiValue: JSBI): string {
   const hex = jsbiValue.toString(16)
@@ -43,10 +43,10 @@ function jsbiToHex(jsbiValue: JSBI): string {
 }
 
 /**
- * token ペアのプールを作成して初期化
+ * token ペアのプールを作成して初期化する
  */
 export async function ensurePoolInitialized(
-  signer: ethers.Signer,
+  signer: any,
   token0: string,
   token1: string,
   fee: number,
@@ -55,8 +55,15 @@ export async function ensurePoolInitialized(
   if (!POSITION_MANAGER_ADDRESS) {
     throw new Error('POSITION_MANAGER_ADDRESS is not set')
   }
+
   const sorted = sortTokens(token0, token1, '0', '0')
   const finalPrice = sorted.token0 === token0 ? price : 1 / price
+
+  const numerator = JSBI.BigInt(Math.floor(finalPrice * 1e6))
+  const denominator = JSBI.BigInt(1_000_000)
+
+  const sqrtPriceX96 = encodeSqrtRatioX96(numerator, denominator)
+  const sqrtPriceX96Hex = jsbiToHex(sqrtPriceX96)
 
   const positionManager = new Contract(
     POSITION_MANAGER_ADDRESS,
@@ -64,15 +71,10 @@ export async function ensurePoolInitialized(
     signer
   )
 
-const sqrtPriceX96 = encodeSqrtRatioX96(
-  JSBI.BigInt(1_000_000),
-  JSBI.BigInt(1_000_000)
-)
-
-  const sqrtPriceX96Hex = jsbiToHex(sqrtPriceX96)
+  const fn = positionManager.getFunction('createAndInitializePoolIfNecessary')
 
   try {
-    await positionManager.createAndInitializePoolIfNecessary.staticCall(
+    await fn.staticCall(
       sorted.token0,
       sorted.token1,
       fee,
@@ -89,24 +91,24 @@ const sqrtPriceX96 = encodeSqrtRatioX96(
     }
   }
 
-  // estimate gas
-  const gasEstimate = await positionManager.createAndInitializePoolIfNecessary.estimateGas(
+  const gasEstimate = await fn.estimateGas(
     sorted.token0,
     sorted.token1,
     fee,
     sqrtPriceX96Hex
   )
-  const gasLimit = gasEstimate * BigInt(12) / BigInt(10) // 1.2倍
 
-  const tx = await positionManager.createAndInitializePoolIfNecessary(
+  const gasLimit = gasEstimate * 12n / 10n
+
+  const tx = await fn.send(
     sorted.token0,
     sorted.token1,
     fee,
     sqrtPriceX96Hex,
     {
       gasLimit,
-      maxFeePerGas: ethers.parseUnits("50", "gwei"),
-      maxPriorityFeePerGas: ethers.parseUnits("2", "gwei")
+      maxFeePerGas: parseUnits("50", "gwei"),
+      maxPriorityFeePerGas: parseUnits("2", "gwei")
     }
   )
   await tx.wait()
@@ -117,7 +119,7 @@ const sqrtPriceX96 = encodeSqrtRatioX96(
  * Uniswap V3 に流動性を追加（新規ポジション作成）
  */
 export async function addLiquidity(
-  signer: ethers.Signer,
+  signer: any,
   token0: string,
   token1: string,
   fee: number,
@@ -125,8 +127,21 @@ export async function addLiquidity(
   tickUpper: number,
   amount0Desired: string,
   amount1Desired: string,
-  slippage: number
+  slippage: number,
+  price?: number // ← 新規で追加
 ) {
+  // 新規プールを作りたい場合は price を渡す
+  if (price !== undefined) {
+    console.log("Running ensurePoolInitialized ...")
+    await ensurePoolInitialized(
+      signer,
+      token0,
+      token1,
+      fee,
+      price
+    )
+  }
+
   const sorted = sortTokens(token0, token1, amount0Desired, amount1Desired)
 
   let lower = sorted.token0 === token0 ? tickLower : -tickUpper
@@ -146,7 +161,7 @@ export async function addLiquidity(
     signer
   )
 
-  const latestBlock = await signer.provider?.getBlock('latest')
+  const latestBlock = await signer.provider.getBlock('latest')
   const currentTimestamp = latestBlock?.timestamp ?? Math.floor(Date.now() / 1000)
   const deadline = currentTimestamp + 60 * 10
 
@@ -169,8 +184,10 @@ export async function addLiquidity(
     deadline
   }
 
+  const mintFn = positionManager.getFunction('mint')
+
   try {
-    await positionManager.mint.staticCall(params)
+    await mintFn.staticCall(params)
   } catch (err: any) {
     const errorMsg = err?.shortMessage || err?.message || String(err)
     const code = (err as any)?.code || ''
@@ -181,9 +198,8 @@ export async function addLiquidity(
     }
   }
 
-  // estimate gas 先に試す
   try {
-    const gasEstimate = await positionManager.mint.estimateGas(params)
+    const gasEstimate = await mintFn.estimateGas(params)
     console.log("estimateGas:", gasEstimate.toString())
   } catch (err) {
     console.error("estimateGas failed:", err)
@@ -191,13 +207,13 @@ export async function addLiquidity(
 
   let tx
   try {
-    const gasEstimate = await positionManager.mint.estimateGas(params)
-    const gasLimit = gasEstimate * BigInt(12) / BigInt(10)
+    const gasEstimate = await mintFn.estimateGas(params)
+    const gasLimit = gasEstimate * 12n / 10n
 
-    tx = await positionManager.mint(params, {
+    tx = await mintFn.send(params, {
       gasLimit,
-      maxFeePerGas: ethers.parseUnits("50", "gwei"),
-      maxPriorityFeePerGas: ethers.parseUnits("2", "gwei")
+      maxFeePerGas: parseUnits("50", "gwei"),
+      maxPriorityFeePerGas: parseUnits("2", "gwei")
     })
     await tx.wait()
   } catch (err: any) {

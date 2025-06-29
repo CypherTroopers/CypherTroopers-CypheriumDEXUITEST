@@ -1,4 +1,5 @@
 // pages/pools.tsx
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import AddLiquidityForm from '../components/AddLiquidityForm'
@@ -9,6 +10,7 @@ import { removeLiquidity } from '../lib/removeLiquidity'
 import { fetchPools, PoolInfo } from '../lib/fetchPools'
 import { useTokens } from '../context/TokensContext'
 import { usePools } from '../context/PoolsContext'
+import { addLiquidity } from '../lib/addLiquidity'
 
 export default function PoolsPage() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -18,6 +20,17 @@ export default function PoolsPage() {
   const [searchAddress, setSearchAddress] = useState('')
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
+
+  // 新たに AddLiquidityForm 用の state
+  const [token0, setToken0] = useState('')
+  const [token1, setToken1] = useState('')
+  const [fee, setFee] = useState(3000)
+  const [tickLower, setTickLower] = useState(-60000)
+  const [tickUpper, setTickUpper] = useState(60000)
+  const [amount0Desired, setAmount0Desired] = useState('')
+  const [amount1Desired, setAmount1Desired] = useState('')
+  const [slippage, setSlippage] = useState(0.5)
+  const [price, setPrice] = useState('')
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
@@ -100,7 +113,32 @@ export default function PoolsPage() {
       setSearching(false)
     }
   }
- 
+
+  const handleAddLiquidity = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!provider) return
+    const signer = await provider.getSigner()
+
+    try {
+      await addLiquidity(
+        signer,
+        token0,
+        token1,
+        fee,
+        tickLower,
+        tickUpper,
+        amount0Desired,
+        amount1Desired,
+        slippage,
+        price !== "" ? parseFloat(price) : undefined
+      );
+      alert("Liquidity added successfully!")
+    } catch (err: any) {
+      console.error(err)
+      alert(err?.message || "Add liquidity failed")
+    }
+  }
+
   return (
     <main style={{ padding: 20 }}>
       <h1>Pools</h1>
@@ -123,7 +161,73 @@ export default function PoolsPage() {
       <p style={{ marginTop: 20 }}>Add Liquidity</p>
 
       {provider ? (
-        <AddLiquidityForm provider={provider} />
+        <form onSubmit={handleAddLiquidity} style={{ marginBottom: 20 }}>
+          <input
+            type="text"
+            placeholder="Token0 Address"
+            value={token0}
+            onChange={e => setToken0(e.target.value)}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="text"
+            placeholder="Token1 Address"
+            value={token1}
+            onChange={e => setToken1(e.target.value)}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="number"
+            placeholder="Fee (e.g. 3000)"
+            value={fee}
+            onChange={e => setFee(Number(e.target.value))}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="number"
+            placeholder="Tick Lower"
+            value={tickLower}
+            onChange={e => setTickLower(Number(e.target.value))}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="number"
+            placeholder="Tick Upper"
+            value={tickUpper}
+            onChange={e => setTickUpper(Number(e.target.value))}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="text"
+            placeholder="Amount0 Desired"
+            value={amount0Desired}
+            onChange={e => setAmount0Desired(e.target.value)}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="text"
+            placeholder="Amount1 Desired"
+            value={amount1Desired}
+            onChange={e => setAmount1Desired(e.target.value)}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="number"
+            step="0.01"
+            placeholder="Slippage (%)"
+            value={slippage}
+            onChange={e => setSlippage(Number(e.target.value))}
+            style={{ marginRight: 10 }}
+          />
+          <input
+            type="text"
+            placeholder="Initial price (e.g. 1.0)"
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            style={{ marginRight: 10 }}
+          />
+          <button type="submit">Add Liquidity</button>
+        </form>
       ) : (
         <p>🦊 MetaMask に接続してください。</p>
       )}
@@ -167,7 +271,7 @@ export default function PoolsPage() {
         </div>
       )}
 
-     <br />
+      <br />
       <Link href="/swap">← Back to Swap</Link>
     </main>
   );
