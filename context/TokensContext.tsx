@@ -13,8 +13,8 @@ interface Props {
 }
 
 export function TokensProvider({ children }: Props) {
-  const [tokens, setTokens] = useState<TokenInfo[]>([])
-
+  const [tokens, setTokens] = useState<TokenInfo[]>(DEFAULT_TOKENS)
+	
   useEffect(() => {
     const fetchTokens = async () => {
       try {

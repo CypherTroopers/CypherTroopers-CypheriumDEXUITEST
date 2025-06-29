@@ -6,6 +6,7 @@ import { PoolsProvider } from '../context/PoolsContext'
 import { WalletProvider } from '../context/WalletContext'
 import { DexSettingsProvider } from '../context/DexSettingsContext'
 import { appWithTranslation } from 'next-i18next'
+import nextI18NextConfig from '../next-i18next.config'
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
@@ -23,4 +24,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   )
 }
 
-export default appWithTranslation(MyApp)
+export default appWithTranslation(MyApp, nextI18NextConfig)
