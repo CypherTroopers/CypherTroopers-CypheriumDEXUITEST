@@ -1,0 +1,21 @@
+import type { NextConfig } from "next"
+import nextI18NextConfig from './next-i18next.config'
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  allowedDevOrigins: ['https://dex.funoncypherium.org'],
+  i18n: nextI18NextConfig.i18n,
+  env: {
+    NEXT_PUBLIC_WETH9_ADDRESS: process.env.NEXT_PUBLIC_WETH9_ADDRESS,
+    NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS: process.env.NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS,
+    NEXT_PUBLIC_SWAP_ROUTER_ADDRESS: process.env.NEXT_PUBLIC_SWAP_ROUTER_ADDRESS,
+    NEXT_PUBLIC_QUOTER_ADDRESS: process.env.NEXT_PUBLIC_QUOTER_ADDRESS,
+    NEXT_PUBLIC_TOKEN_DESCRIPTOR_ADDRESS: process.env.NEXT_PUBLIC_TOKEN_DESCRIPTOR_ADDRESS,
+    NEXT_PUBLIC_POSITION_MANAGER_ADDRESS: process.env.NEXT_PUBLIC_POSITION_MANAGER_ADDRESS,
+    NEXT_PUBLIC_POOL_DEPLOYER_ADDRESS: process.env.NEXT_PUBLIC_POOL_DEPLOYER_ADDRESS,
+    NEXT_PUBLIC_TICK_LENS_ADDRESS: process.env.NEXT_PUBLIC_TICK_LENS_ADDRESS,
+    NEXT_PUBLIC_MULTICALL_ADDRESS: process.env.NEXT_PUBLIC_MULTICALL_ADDRESS,
+  }
+}
+
+export default nextConfig
