@@ -1,6 +1,6 @@
 // lib/addLiquidity.ts
 
-import { Contract, parseUnits, ZeroAddress } from 'ethers'
+import { Contract, parseUnits } from 'ethers'
 import NonfungiblePositionManagerABIJson from '../abi/NonfungiblePositionManager.json'
 import { encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
 import JSBI from 'jsbi'
@@ -35,7 +35,7 @@ function sortTokens(
 }
 
 /**
- * encodeSqrtRatioX96 の結果 (JSBI) を hex string に変換する
+ * encodeSqrtRatioX96 の結果(JSBI)を hex string に変換する
  */
 function jsbiToHex(jsbiValue: JSBI): string {
   const hex = jsbiValue.toString(16)
@@ -107,8 +107,7 @@ export async function ensurePoolInitialized(
     sqrtPriceX96Hex,
     {
       gasLimit,
-      maxFeePerGas: parseUnits("50", "gwei"),
-      maxPriorityFeePerGas: parseUnits("2", "gwei")
+      gasPrice: parseUnits("50", "gwei"),
     }
   )
   await tx.wait()
@@ -128,7 +127,7 @@ export async function addLiquidity(
   amount0Desired: string,
   amount1Desired: string,
   slippage: number,
-  price?: number // ← 新規で追加
+  price?: number
 ) {
   // 新規プールを作りたい場合は price を渡す
   if (price !== undefined) {
@@ -212,8 +211,7 @@ export async function addLiquidity(
 
     tx = await mintFn.send(params, {
       gasLimit,
-      maxFeePerGas: parseUnits("50", "gwei"),
-      maxPriorityFeePerGas: parseUnits("2", "gwei")
+      gasPrice: parseUnits("50", "gwei")
     })
     await tx.wait()
   } catch (err: any) {

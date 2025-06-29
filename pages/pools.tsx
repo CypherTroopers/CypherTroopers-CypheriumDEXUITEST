@@ -12,6 +12,12 @@ import { useTokens } from '../context/TokensContext'
 import { usePools } from '../context/PoolsContext'
 import { addLiquidity } from '../lib/addLiquidity'
 
+// ERC20 approve 用の ABI
+const ERC20_ABI = [
+  "function approve(address spender, uint256 amount) external returns (bool)",
+  "function allowance(address owner, address spender) external view returns (uint256)"
+]
+
 export default function PoolsPage() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
@@ -21,7 +27,7 @@ export default function PoolsPage() {
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
 
-  // 新たに AddLiquidityForm 用の state
+  // AddLiquidityForm 用 state
   const [token0, setToken0] = useState('')
   const [token1, setToken1] = useState('')
   const [fee, setFee] = useState(3000)
@@ -33,11 +39,23 @@ export default function PoolsPage() {
   const [price, setPrice] = useState('')
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
-      setProvider(browserProvider);
+    const connectWallet = async () => {
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        const ethereum = (window as any).ethereum
+        try {
+          await ethereum.request({ method: 'eth_requestAccounts' })
+          const browserProvider = new ethers.BrowserProvider(ethereum)
+          setProvider(browserProvider)
+          console.log("✅ Wallet connected")
+        } catch (err) {
+          console.error("User denied wallet connection or error occurred:", err)
+        }
+      } else {
+        console.error("MetaMask not found")
+      }
     }
-  }, []);
+    connectWallet()
+  }, [])
 
   useEffect(() => {
     const fetchPositions = async () => {
@@ -45,7 +63,7 @@ export default function PoolsPage() {
       const signer = await provider.getSigner()
       const address = await signer.getAddress()
       if (!POSITION_MANAGER_ADDRESS) {
-        throw new Error('POSITION_MANAGER_ADDRESS is not set');
+        throw new Error('POSITION_MANAGER_ADDRESS is not set')
       }
       const manager = new ethers.Contract(
         POSITION_MANAGER_ADDRESS,
@@ -75,7 +93,7 @@ export default function PoolsPage() {
     await removeLiquidity(signer, tokenId, liquidity)
     // refresh positions
     if (!POSITION_MANAGER_ADDRESS) {
-      throw new Error('POSITION_MANAGER_ADDRESS is not set');
+      throw new Error('POSITION_MANAGER_ADDRESS is not set')
     }
     const manager = new ethers.Contract(
       POSITION_MANAGER_ADDRESS,
@@ -88,7 +106,12 @@ export default function PoolsPage() {
     for (let i = 0; i < Number(balance); i++) {
       const tId: bigint = await manager.tokenOfOwnerByIndex(address, i)
       const pos = await manager.positions(tId)
-      list.push({ tokenId: Number(tId), liquidity: pos.liquidity.toString(), token0: pos.token0, token1: pos.token1 })
+      list.push({
+        tokenId: Number(tId),
+        liquidity: pos.liquidity.toString(),
+        token0: pos.token0,
+        token1: pos.token1
+      })
     }
     setPositions(list)
   }
@@ -108,6 +131,7 @@ export default function PoolsPage() {
         addPool({ token0: searchAddress, token1: p.token.address, fee: p.fee, pool: p.pool })
       })
     } catch (err) {
+      console.error(err)
       setFoundPools([])
     } finally {
       setSearching(false)
@@ -117,9 +141,37 @@ export default function PoolsPage() {
   const handleAddLiquidity = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!provider) return
+
     const signer = await provider.getSigner()
+    const userAddress = await signer.getAddress()
 
     try {
+      // Approve token0
+      if (token0 && amount0Desired) {
+        const token0Contract = new ethers.Contract(token0, ERC20_ABI, signer)
+        const allowance0 = await token0Contract.allowance(userAddress, POSITION_MANAGER_ADDRESS)
+        if (allowance0 < BigInt(amount0Desired)) {
+          console.log(`Approving token0: ${token0}`)
+          const tx0 = await token0Contract.approve(POSITION_MANAGER_ADDRESS, amount0Desired)
+          await tx0.wait()
+        } else {
+          console.log(`Token0 allowance sufficient: ${allowance0.toString()}`)
+        }
+      }
+
+      // Approve token1
+      if (token1 && amount1Desired) {
+        const token1Contract = new ethers.Contract(token1, ERC20_ABI, signer)
+        const allowance1 = await token1Contract.allowance(userAddress, POSITION_MANAGER_ADDRESS)
+        if (allowance1 < BigInt(amount1Desired)) {
+          console.log(`Approving token1: ${token1}`)
+          const tx1 = await token1Contract.approve(POSITION_MANAGER_ADDRESS, amount1Desired)
+          await tx1.wait()
+        } else {
+          console.log(`Token1 allowance sufficient: ${allowance1.toString()}`)
+        }
+      }
+
       await addLiquidity(
         signer,
         token0,
@@ -131,7 +183,8 @@ export default function PoolsPage() {
         amount1Desired,
         slippage,
         price !== "" ? parseFloat(price) : undefined
-      );
+      )
+
       alert("Liquidity added successfully!")
     } catch (err: any) {
       console.error(err)
@@ -274,5 +327,5 @@ export default function PoolsPage() {
       <br />
       <Link href="/swap">← Back to Swap</Link>
     </main>
-  );
+  )
 }
