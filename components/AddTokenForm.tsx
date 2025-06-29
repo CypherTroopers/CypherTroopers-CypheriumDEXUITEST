@@ -9,7 +9,7 @@ export default function AddTokenForm() {
   const [decimals, setDecimals] = useState(18)
   const [error, setError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!ethers.isAddress(address)) {
       setError('Invalid Ethereum address')
@@ -22,7 +22,7 @@ export default function AddTokenForm() {
       setError('Token symbol or address already exists')
       return
     }
-    addToken({ symbol, address, decimals: Number(decimals) })
+    await addToken({ symbol, address, decimals: Number(decimals) })
     setSymbol('')
     setAddress('')
     setDecimals(18)

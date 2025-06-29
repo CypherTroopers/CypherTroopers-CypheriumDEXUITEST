@@ -34,7 +34,7 @@ export default function SearchTokenForm() {
         erc20.symbol(),
         erc20.decimals()
       ])
-      addToken({ symbol, address, decimals: Number(decimals) })
+      await addToken({ symbol, address, decimals: Number(decimals) })
       setAddress('')
     } catch {
       setError('Failed to fetch token info')

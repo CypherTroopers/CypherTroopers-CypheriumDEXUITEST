@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { ethers } from 'ethers'
 import { TokenInfo } from '../lib/tokens'
 import { useTokens } from '../context/TokensContext'
+import { usePools } from '../context/PoolsContext'
 import { fetchPools, type PoolInfo } from '../lib/fetchPools'
 import { fetchQuote } from '../lib/fetchQuote'
 import { approveToken } from '../lib/approve'
@@ -13,6 +14,7 @@ import { useWallet } from '../context/WalletContext'
 
 export default function Home() {
   const { tokens, addToken } = useTokens()
+  const { pools, addPool } = usePools()
   const { poolFee } = useDexSettings()
   const { provider, signer, account, connectWallet } = useWallet()
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
@@ -48,6 +50,7 @@ export default function Home() {
             if (!exists) {
               addToken(p.token)
             }
+            addPool({ token0: addr, token1: p.token.address, fee: p.fee, pool: p.pool })
           }
         } catch {
           // ignore errors for detection
@@ -78,6 +81,9 @@ export default function Home() {
     try {
       const pools = await fetchPools(provider, searchAddress, tokens)
       setFoundPools(pools)
+      pools.forEach(p => {
+        addPool({ token0: searchAddress, token1: p.token.address, fee: p.fee, pool: p.pool })
+      })
     } catch {
       setFoundPools([])
     } finally {
@@ -167,18 +173,32 @@ export default function Home() {
             <button type="submit">Search</button>
           </form>
           {searching && <p>Searching...</p>}
-          {foundPools.length > 0 ? (
-            <ul>
-              {foundPools.map((p, i) => (
-                <li key={i}>
-                  {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            !searching && searchAddress && <p>No pools found</p>
-          )}
+        {foundPools.length > 0 ? (
+          <ul>
+            {foundPools.map((p, i) => (
+              <li key={i}>
+                {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          !searching && searchAddress && <p>No pools found</p>
+        )}
+      </div>
+
+      {/* Display known pools */}
+      {pools.length > 0 && (
+        <div style={{ marginTop: 30 }}>
+          <h2>Known Pools</h2>
+          <ul>
+            {pools.map((p, i) => (
+              <li key={i}>
+                {p.token0}/{p.token1} (fee {p.fee}) - {p.pool}
+              </li>
+            ))}
+          </ul>
         </div>
+      )}
         </div>
     </main>
   )

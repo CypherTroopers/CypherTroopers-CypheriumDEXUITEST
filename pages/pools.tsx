@@ -8,11 +8,13 @@ import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
 import { removeLiquidity } from '../lib/removeLiquidity'
 import { fetchPools, PoolInfo } from '../lib/fetchPools'
 import { useTokens } from '../context/TokensContext'
+import { usePools } from '../context/PoolsContext'
 
 export default function PoolsPage() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
   const { tokens } = useTokens()
+  const { pools, addPool } = usePools()
   const [searchAddress, setSearchAddress] = useState('')
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
@@ -89,6 +91,9 @@ export default function PoolsPage() {
     try {
       const pools = await fetchPools(provider, searchAddress, tokens)
       setFoundPools(pools)
+      pools.forEach(p => {
+        addPool({ token0: searchAddress, token1: p.token.address, fee: p.fee, pool: p.pool })
+      })
     } catch (err) {
       setFoundPools([])
     } finally {
@@ -148,6 +153,19 @@ export default function PoolsPage() {
           !searching && searchAddress && <p>No pools found</p>
         )}
       </div>
+
+      {pools.length > 0 && (
+        <div style={{ marginTop: 30 }}>
+          <h2>Known Pools</h2>
+          <ul>
+            {pools.map((p, i) => (
+              <li key={i}>
+                {p.token0}/{p.token1} (fee {p.fee}) - {p.pool}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
      <br />
       <Link href="/swap">← Back to Swap</Link>
