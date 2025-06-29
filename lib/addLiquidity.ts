@@ -1,13 +1,14 @@
 // lib/addLiquidity.ts
 import { Contract } from 'ethers'
-import NonfungiblePositionManagerABIJson from '../abi/NonfungiblePositionManager.json';
+import NonfungiblePositionManagerABIJson from '../abi/NonfungiblePositionManager.json'
 import { ethers } from 'ethers'
 import { encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
-
+import JSBI from 'jsbi'
 import { POSITION_MANAGER_ADDRESS } from './addresses'
 
 const NonfungiblePositionManagerABI =
-  (NonfungiblePositionManagerABIJson as any).default || NonfungiblePositionManagerABIJson;
+  (NonfungiblePositionManagerABIJson as any).default || NonfungiblePositionManagerABIJson
+
 /**
  * token のアドレスをソートし、対応する数量も並び替える
  */
@@ -17,7 +18,7 @@ function sortTokens(
   amountADesired: string,
   amountBDesired: string
 ) {
-  if (BigInt(tokenA.toLowerCase()) < BigInt(tokenB.toLowerCase())) {
+  if (tokenA.toLowerCase() < tokenB.toLowerCase()) {
     return {
       token0: tokenA,
       token1: tokenB,
@@ -36,9 +37,9 @@ function sortTokens(
 /**
  * encodeSqrtRatioX96 の結果(JSBI)を hex string に変換する
  */
-function jsbiToHex(jsbiValue: any): string {
-  const hex = jsbiValue.toString(16);
-  return '0x' + hex.padStart(32, '0');
+function jsbiToHex(jsbiValue: JSBI): string {
+  const hex = jsbiValue.toString(16)
+  return '0x' + hex.padStart(32, '0')
 }
 
 /**
@@ -52,39 +53,63 @@ export async function ensurePoolInitialized(
   price: number
 ) {
   if (!POSITION_MANAGER_ADDRESS) {
-    throw new Error('POSITION_MANAGER_ADDRESS is not set');
+    throw new Error('POSITION_MANAGER_ADDRESS is not set')
   }
   const sorted = sortTokens(token0, token1, '0', '0')
   const finalPrice = sorted.token0 === token0 ? price : 1 / price
+
   const positionManager = new Contract(
     POSITION_MANAGER_ADDRESS,
     NonfungiblePositionManagerABI,
     signer
   )
 
-  const sqrtPriceX96 = encodeSqrtRatioX96(
-    Math.floor(finalPrice * 1e6).toString(),
-    '1000000'
-  )
+const sqrtPriceX96 = encodeSqrtRatioX96(
+  JSBI.BigInt(1_000_000),
+  JSBI.BigInt(1_000_000)
+)
 
-  // ✅ hex に変換
-  const sqrtPriceX96Hex = jsbiToHex(sqrtPriceX96);
+  const sqrtPriceX96Hex = jsbiToHex(sqrtPriceX96)
 
   try {
-    const tx = await positionManager.createAndInitializePoolIfNecessary(
+    await positionManager.createAndInitializePoolIfNecessary.staticCall(
       sorted.token0,
       sorted.token1,
       fee,
       sqrtPriceX96Hex
     )
-    await tx.wait()
   } catch (err: any) {
-    const msg = err?.message ?? ''
-    if (msg.includes('already') && (msg.includes('initialized') || msg.includes('exists'))) {
+    const msg = err?.shortMessage || err?.message || String(err)
+    if (msg.includes('missing revert data')) {
+      console.warn('createAndInitializePoolIfNecessary.staticCall missing revert data, continuing')
+    } else if (msg.includes('already') && (msg.includes('initialized') || msg.includes('exists'))) {
       return
+    } else {
+      throw new Error(msg)
     }
-    throw err
   }
+
+  // estimate gas
+  const gasEstimate = await positionManager.createAndInitializePoolIfNecessary.estimateGas(
+    sorted.token0,
+    sorted.token1,
+    fee,
+    sqrtPriceX96Hex
+  )
+  const gasLimit = gasEstimate * BigInt(12) / BigInt(10) // 1.2倍
+
+  const tx = await positionManager.createAndInitializePoolIfNecessary(
+    sorted.token0,
+    sorted.token1,
+    fee,
+    sqrtPriceX96Hex,
+    {
+      gasLimit,
+      maxFeePerGas: ethers.parseUnits("50", "gwei"),
+      maxPriorityFeePerGas: ethers.parseUnits("2", "gwei")
+    }
+  )
+  await tx.wait()
 }
 
 /**
@@ -95,38 +120,47 @@ export async function addLiquidity(
   signer: ethers.Signer,
   token0: string,
   token1: string,
-  fee: number,                  // 例: 3000
+  fee: number,
   tickLower: number,
   tickUpper: number,
-  amount0Desired: string,      // 例: '1000000000000000000' (1.0 Token)
+  amount0Desired: string,
   amount1Desired: string,
-  slippage: number             // 例: 0.5 (%)
+  slippage: number
 ) {
   const sorted = sortTokens(token0, token1, amount0Desired, amount1Desired)
-  const finalTickLower = sorted.token0 === token0 ? tickLower : -tickUpper
-  const finalTickUpper = sorted.token0 === token0 ? tickUpper : -tickLower
-  if (!POSITION_MANAGER_ADDRESS) {
-    throw new Error('POSITION_MANAGER_ADDRESS is not set');
+
+  let lower = sorted.token0 === token0 ? tickLower : -tickUpper
+  let upper = sorted.token0 === token0 ? tickUpper : -tickLower
+
+  if (lower > upper) {
+    [lower, upper] = [upper, lower]
   }
+
+  if (!POSITION_MANAGER_ADDRESS) {
+    throw new Error('POSITION_MANAGER_ADDRESS is not set')
+  }
+
   const positionManager = new Contract(
     POSITION_MANAGER_ADDRESS,
     NonfungiblePositionManagerABI,
     signer
-  );
+  )
 
   const latestBlock = await signer.provider?.getBlock('latest')
   const currentTimestamp = latestBlock?.timestamp ?? Math.floor(Date.now() / 1000)
   const deadline = currentTimestamp + 60 * 10
 
-  const amount0Min = BigInt(sorted.amount0Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
-  const amount1Min = BigInt(sorted.amount1Desired) * BigInt(1000 - slippage * 10) / BigInt(1000)
+  const slippageFactor = BigInt(Math.floor((1 - slippage / 100) * 1_000_000))
+  const amount0Min = BigInt(sorted.amount0Desired) * slippageFactor / BigInt(1_000_000)
+  const amount1Min = BigInt(sorted.amount1Desired) * slippageFactor / BigInt(1_000_000)
+
   const recipient = await signer.getAddress()
   const params = {
     token0: sorted.token0,
     token1: sorted.token1,
     fee,
-    tickLower: finalTickLower,
-    tickUpper: finalTickUpper,
+    tickLower: lower,
+    tickUpper: upper,
     amount0Desired: sorted.amount0Desired,
     amount1Desired: sorted.amount1Desired,
     amount0Min: amount0Min.toString(),
@@ -135,19 +169,54 @@ export async function addLiquidity(
     deadline
   }
 
-// Use staticCall to detect reverts and surface error messages
   try {
     await positionManager.mint.staticCall(params)
   } catch (err: any) {
     const errorMsg = err?.shortMessage || err?.message || String(err)
-    if (errorMsg.includes('missing revert data')) {
+    const code = (err as any)?.code || ''
+    if (errorMsg.includes('missing revert data') || code === 'CALL_EXCEPTION') {
       console.warn('mint.staticCall failed with missing revert data, proceeding')
     } else {
       throw new Error(errorMsg)
     }
   }
 
-  const tx = await positionManager.mint(params)
+  // estimate gas 先に試す
+  try {
+    const gasEstimate = await positionManager.mint.estimateGas(params)
+    console.log("estimateGas:", gasEstimate.toString())
+  } catch (err) {
+    console.error("estimateGas failed:", err)
+  }
+
+  let tx
+  try {
+    const gasEstimate = await positionManager.mint.estimateGas(params)
+    const gasLimit = gasEstimate * BigInt(12) / BigInt(10)
+
+    tx = await positionManager.mint(params, {
+      gasLimit,
+      maxFeePerGas: ethers.parseUnits("50", "gwei"),
+      maxPriorityFeePerGas: ethers.parseUnits("2", "gwei")
+    })
+    await tx.wait()
+  } catch (err: any) {
+    console.error("RAW ERROR OBJECT:", err)
+    const errorMsg =
+      err?.shortMessage ||
+      err?.reason ||
+      err?.message ||
+      String(err)
+    console.error("Extracted errorMsg:", errorMsg)
+
+    if (errorMsg.includes("missing revert data") || errorMsg.includes("coalesce")) {
+      console.error("mint revert params:", params)
+      throw new Error(
+        "mint reverted with missing revert data or could not coalesce error. Verify token addresses, pool initialization, and amounts"
+      )
+    }
+    throw new Error(errorMsg)
+  }
 
   return tx
 }
