@@ -149,6 +149,6 @@ export async function addLiquidity(
 
   const tx = await positionManager.mint(params)
 
-  return tx.wait()
+  return tx
 }
 

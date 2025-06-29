@@ -72,7 +72,7 @@ export default function AddLiquidityForm({ provider }: Props) {
       console.log("parsedAmount1:", parsedAmount1);
       console.log("tickLower:", tickLower, "tickUpper:", tickUpper);
 
-      await addLiquidity(
+      const tx = await addLiquidity(
         signer,
         token0,
         token1,
@@ -84,7 +84,16 @@ export default function AddLiquidityForm({ provider }: Props) {
         slippage
       );
 
-      setStatus('✅ Success!');
+      setStatus('Transaction pending, waiting for confirmation...');
+      try {
+        await tx.wait();
+        setStatus('✅ Success!');
+      } catch (waitErr: any) {
+        console.error(waitErr);
+        const waitMsg = waitErr?.shortMessage || waitErr?.message || String(waitErr);
+        setStatus('❌ Error while waiting for confirmation: ' + waitMsg);
+        return;
+      }
     } catch (err: any) {
       console.error(err);
       const errorMsg = err?.shortMessage || err?.message || String(err);
