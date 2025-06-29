@@ -1,7 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { TokenInfo } from '../lib/tokens'
 import { useTokens } from '../context/TokensContext'
+import { fetchPools } from '../lib/fetchPools'
 import { fetchQuote } from '../lib/fetchQuote'
 import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
@@ -10,13 +11,14 @@ import { useDexSettings } from '../context/DexSettingsContext'
 import { useWallet } from '../context/WalletContext'
 
 export default function Home() {
-  const { tokens } = useTokens()
+  const { tokens, addToken } = useTokens()
   const { poolFee } = useDexSettings()
   const { provider, signer, account, connectWallet } = useWallet()
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
   const [toToken, setToToken] = useState<TokenInfo>(tokens[1])
   const [amountIn, setAmountIn] = useState('')
   const [quotedAmountOut, setQuotedAmountOut] = useState('')
+  const scannedRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (tokens.length > 0) setFromToken(tokens[0])
@@ -26,6 +28,30 @@ export default function Home() {
   useEffect(() => {
     connectWallet()
   }, [])
+
+  // Detect new pools on chain and automatically add tokens
+  useEffect(() => {
+    const detectPools = async () => {
+      if (!provider) return
+      for (const t of tokens) {
+        const addr = t.address.toLowerCase()
+        if (scannedRef.current.has(addr)) continue
+        scannedRef.current.add(addr)
+        try {
+          const pools = await fetchPools(provider, addr, tokens)
+          for (const p of pools) {
+            const exists = tokens.some(existing => existing.address.toLowerCase() === p.token.address.toLowerCase())
+            if (!exists) {
+              addToken(p.token)
+            }
+          }
+        } catch {
+          // ignore errors for detection
+        }
+      }
+    }
+    detectPools()
+  }, [provider, tokens])
 
   const handleApprove = async () => {
     if (!provider || !amountIn) return
