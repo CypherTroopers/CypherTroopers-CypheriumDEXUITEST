@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
+import { ethers } from 'ethers'
 import { TokenInfo } from '../lib/tokens'
 import { useTokens } from '../context/TokensContext'
-import { fetchPools } from '../lib/fetchPools'
+import { fetchPools, type PoolInfo } from '../lib/fetchPools'
 import { fetchQuote } from '../lib/fetchQuote'
 import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
@@ -19,6 +20,9 @@ export default function Home() {
   const [amountIn, setAmountIn] = useState('')
   const [quotedAmountOut, setQuotedAmountOut] = useState('')
   const scannedRef = useRef<Set<string>>(new Set())
+  const [searchAddress, setSearchAddress] = useState('')
+  const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
+  const [searching, setSearching] = useState(false)
 
   useEffect(() => {
     if (tokens.length > 0) setFromToken(tokens[0])
@@ -63,7 +67,25 @@ export default function Home() {
     await executeSwap(signer, fromToken, toToken, amountIn, poolFee)
   }
 
-  // fetchQuote を呼び出して amountOut を表示
+  const handleSearchPools = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!provider) return
+    if (!ethers.isAddress(searchAddress)) {
+      setFoundPools([])
+      return
+    }
+    setSearching(true)
+    try {
+      const pools = await fetchPools(provider, searchAddress, tokens)
+      setFoundPools(pools)
+    } catch {
+      setFoundPools([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
+// fetchQuote を呼び出して amountOut を表示
   useEffect(() => {
     const getQuote = async () => {
       if (!provider || !amountIn || !fromToken || !toToken) return
@@ -131,8 +153,33 @@ export default function Home() {
         <button style={{ marginTop: 10 }} onClick={handleSwap}>
           Swap
         </button>
-      </div>
+      
+        <div style={{ marginTop: 30 }}>
+          <h2>Find Pools</h2>
+          <form onSubmit={handleSearchPools} style={{ marginBottom: 10 }}>
+            <input
+              type="text"
+              placeholder="ERC20 address"
+              value={searchAddress}
+              onChange={e => setSearchAddress(e.target.value)}
+              style={{ marginRight: 10 }}
+            />
+            <button type="submit">Search</button>
+          </form>
+          {searching && <p>Searching...</p>}
+          {foundPools.length > 0 ? (
+            <ul>
+              {foundPools.map((p, i) => (
+                <li key={i}>
+                  {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            !searching && searchAddress && <p>No pools found</p>
+          )}
+        </div>
+        </div>
     </main>
   )
 }
-
