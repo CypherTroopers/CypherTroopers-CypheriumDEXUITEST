@@ -13,7 +13,9 @@ interface Props {
 }
 
 export function TokensProvider({ children }: Props) {
-  const [tokens, setTokens] = useState<TokenInfo[]>(DEFAULT_TOKENS)
+  const [tokens, setTokens] = useState<TokenInfo[]>(
+    DEFAULT_TOKENS.map(t => ({ ...t, address: t.address.toLowerCase() }))
+  )
 	
   useEffect(() => {
     const fetchTokens = async () => {
@@ -21,24 +23,25 @@ export function TokensProvider({ children }: Props) {
         const res = await fetch('/api/tokens')
         if (res.ok) {
           const data: TokenInfo[] = await res.json()
-          setTokens(data.length > 0 ? data : DEFAULT_TOKENS)
+          const normalized = data.map(t => ({ ...t, address: t.address.toLowerCase() }))
+          setTokens(normalized.length > 0 ? normalized : DEFAULT_TOKENS.map(t => ({ ...t, address: t.address.toLowerCase() })))
         } else {
-          setTokens(DEFAULT_TOKENS)
+          setTokens(DEFAULT_TOKENS.map(t => ({ ...t, address: t.address.toLowerCase() })))
         }
       } catch {
-        setTokens(DEFAULT_TOKENS)
+        setTokens(DEFAULT_TOKENS.map(t => ({ ...t, address: t.address.toLowerCase() })))
       }
     }
     fetchTokens()
   }, [])
 
   const addToken = async (token: TokenInfo) => {
-    setTokens(prev => [...prev, token])
+    setTokens(prev => [...prev, { ...token, address: token.address.toLowerCase() }])
     try {
       await fetch('/api/tokens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(token)
+        body: JSON.stringify({ ...token, address: token.address.toLowerCase() })
       })
     } catch {
       // ignore

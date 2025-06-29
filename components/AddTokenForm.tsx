@@ -22,7 +22,7 @@ export default function AddTokenForm() {
       setError('Token symbol or address already exists')
       return
     }
-    await addToken({ symbol, address, decimals: Number(decimals) })
+    await addToken({ symbol, address: address.toLowerCase(), decimals: Number(decimals) })
     setSymbol('')
     setAddress('')
     setDecimals(18)

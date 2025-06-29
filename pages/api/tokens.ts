@@ -13,7 +13,8 @@ type Token = {
 function readTokens(): Token[] {
   try {
     const data = fs.readFileSync(dataFile, 'utf8')
-    return JSON.parse(data)
+    const tokens: Token[] = JSON.parse(data)
+    return tokens.map(t => ({ ...t, address: t.address.toLowerCase() }))
   } catch {
     return []
   }
@@ -31,7 +32,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
   if (req.method === 'POST') {
     const tokens = readTokens()
-    const token: Token = req.body
+    const token: Token = { ...req.body, address: req.body.address.toLowerCase() }
     tokens.push(token)
     writeTokens(tokens)
     res.status(200).json({ success: true })
