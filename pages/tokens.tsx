@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { useTokens } from '../context/TokensContext'
 import AddTokenForm from '../components/AddTokenForm'
+import SearchTokenForm from '../components/SearchTokenForm'
 
 export default function TokensPage() {
   const { tokens } = useTokens()
@@ -13,6 +14,7 @@ export default function TokensPage() {
         ))}
       </ul>
       <AddTokenForm />
+      <SearchTokenForm />
       <Link href="/swap">← Back to Swap</Link>
     </main>
   )

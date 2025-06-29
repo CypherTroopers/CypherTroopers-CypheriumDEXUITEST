@@ -6,10 +6,16 @@ import { ethers } from 'ethers'
 import NonfungiblePositionManagerABI from '../abi/NonfungiblePositionManager.json'
 import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
 import { removeLiquidity } from '../lib/removeLiquidity'
+import { fetchPools, PoolInfo } from '../lib/fetchPools'
+import { useTokens } from '../context/TokensContext'
 
 export default function PoolsPage() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
+  const { tokens } = useTokens()
+  const [searchAddress, setSearchAddress] = useState('')
+  const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
+  const [searching, setSearching] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
@@ -72,6 +78,24 @@ export default function PoolsPage() {
     setPositions(list)
   }
 
+  const handleSearchPools = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!provider) return
+    if (!ethers.isAddress(searchAddress)) {
+      setFoundPools([])
+      return
+    }
+    setSearching(true)
+    try {
+      const pools = await fetchPools(provider, searchAddress, tokens)
+      setFoundPools(pools)
+    } catch (err) {
+      setFoundPools([])
+    } finally {
+      setSearching(false)
+    }
+  }
+ 
   return (
     <main style={{ padding: 20 }}>
       <h1>Pools</h1>
@@ -99,7 +123,33 @@ export default function PoolsPage() {
         <p>🦊 MetaMask に接続してください。</p>
       )}
 
-      <br />
+      <div style={{ marginTop: 30 }}>
+        <h2>Find Pools</h2>
+        <form onSubmit={handleSearchPools} style={{ marginBottom: 10 }}>
+          <input
+            type="text"
+            placeholder="ERC20 address"
+            value={searchAddress}
+            onChange={e => setSearchAddress(e.target.value)}
+            style={{ marginRight: 10 }}
+          />
+          <button type="submit">Search</button>
+        </form>
+        {searching && <p>Searching...</p>}
+        {foundPools.length > 0 ? (
+          <ul>
+            {foundPools.map((p, i) => (
+              <li key={i}>
+                {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          !searching && searchAddress && <p>No pools found</p>
+        )}
+      </div>
+
+     <br />
       <Link href="/swap">← Back to Swap</Link>
     </main>
   );

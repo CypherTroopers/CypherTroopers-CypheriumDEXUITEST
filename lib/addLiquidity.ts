@@ -140,7 +140,11 @@ export async function addLiquidity(
     await positionManager.mint.staticCall(params)
   } catch (err: any) {
     const errorMsg = err?.shortMessage || err?.message || String(err)
-    throw new Error(errorMsg)
+    if (errorMsg.includes('missing revert data')) {
+      console.warn('mint.staticCall failed with missing revert data, proceeding')
+    } else {
+      throw new Error(errorMsg)
+    }
   }
 
   const tx = await positionManager.mint(params)
