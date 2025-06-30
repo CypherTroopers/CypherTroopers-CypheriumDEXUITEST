@@ -18,6 +18,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const connectWallet = async () => {
     const ethereum = (window as any).ethereum
     if (!ethereum) return alert('MetaMaskが見つかりません')
+        try {
+      await ethereum.request({ method: 'eth_requestAccounts' })
+    } catch (err) {
+      console.error(err)
+      return
+    }
     const prov = new ethers.BrowserProvider(ethereum)
     const signerObj = await prov.getSigner()
     const addr = await signerObj.getAddress()
