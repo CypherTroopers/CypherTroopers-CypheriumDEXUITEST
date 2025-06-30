@@ -10,6 +10,7 @@ import nextI18NextConfig from '../next-i18next.config'
 import { validateAddresses } from '../lib/addresses'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
+import '../styles/globals.css'
 
 // Ensure required environment variables are set on startup
 validateAddresses()
@@ -23,6 +24,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <TokensProvider>
           <PoolsProvider>
             <DexSettingsProvider>
+          <div className="background-logo" />
               <Navbar />
               <Component {...pageProps} />
             </DexSettingsProvider>
