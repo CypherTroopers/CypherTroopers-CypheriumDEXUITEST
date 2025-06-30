@@ -1,13 +1,12 @@
 import RemoveLiquidityForm from '../components/RemoveLiquidityForm'
 import Link from 'next/link'
-import { useWalletClient } from 'wagmi'
 import { ethers } from 'ethers'
 
 export default function RemovePage() {
-  const { data: walletClient } = useWalletClient()
-  const provider = walletClient
-    ? new ethers.BrowserProvider(walletClient.transport)
-    : undefined
+  const provider =
+    typeof window !== 'undefined' && window.ethereum
+      ? new ethers.BrowserProvider(window.ethereum)
+      : undefined
 
   return (
     <main style={{ padding: 20 }}>

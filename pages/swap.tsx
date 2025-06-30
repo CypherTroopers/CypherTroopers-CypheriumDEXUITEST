@@ -10,17 +10,19 @@ import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
 import { SWAP_ROUTER_ADDRESS } from '../lib/addresses'
 import { useDexSettings } from '../context/DexSettingsContext'
-import { useAccount, useWalletClient } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 export default function Home() {
   const { tokens, addToken } = useTokens()
   const { pools, addPool } = usePools()
   const { poolFee } = useDexSettings()
-    const { address } = useAccount()
-  const { data: walletClient } = useWalletClient()
-  const provider = walletClient
-    ? new ethers.BrowserProvider(walletClient.transport)
-    : undefined
+  const { address } = useAccount()
+
+  const provider =
+    typeof window !== 'undefined' && window.ethereum
+      ? new ethers.BrowserProvider(window.ethereum)
+      : undefined
+
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
   const [toToken, setToToken] = useState<TokenInfo>(tokens[1])
   const [amountIn, setAmountIn] = useState('')
@@ -35,7 +37,6 @@ export default function Home() {
     if (tokens.length > 1) setToToken(tokens[1])
   }, [tokens])
 
-  // Detect new pools on chain and automatically add tokens
   useEffect(() => {
     const detectPools = async () => {
       if (!provider) return
@@ -92,7 +93,6 @@ export default function Home() {
     }
   }
 
-// fetchQuote を呼び出して amountOut を表示
   useEffect(() => {
     const getQuote = async () => {
       if (!provider || !amountIn || !fromToken || !toToken) return
@@ -160,7 +160,7 @@ export default function Home() {
         <button style={{ marginTop: 10 }} onClick={handleSwap}>
           Swap
         </button>
-      
+
         <div style={{ marginTop: 30 }}>
           <h2>Find Pools</h2>
           <form onSubmit={handleSearchPools} style={{ marginBottom: 10 }}>
@@ -187,7 +187,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Display known pools */}
       {pools.length > 0 && (
         <div style={{ marginTop: 30 }}>
           <h2>Known Pools</h2>

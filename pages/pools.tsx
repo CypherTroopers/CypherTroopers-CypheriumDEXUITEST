@@ -9,25 +9,22 @@ import { removeLiquidity } from '../lib/removeLiquidity'
 import { fetchPools, PoolInfo } from '../lib/fetchPools'
 import { useTokens } from '../context/TokensContext'
 import { usePools } from '../context/PoolsContext'
-import { addLiquidity } from '../lib/addLiquidity'
-import { useWalletClient } from 'wagmi'
 
-// ERC20 approve 用の ABI
 const ERC20_ABI = [
   "function approve(address spender, uint256 amount) external returns (bool)",
   "function allowance(address owner, address spender) external view returns (uint256)"
 ]
 
-  const computeDefaultPrice = (lower: number, upper: number) => {
-    const midTick = (lower + upper) / 2
-    return Math.pow(1.0001, midTick)
-  }
+const computeDefaultPrice = (lower: number, upper: number) => {
+  const midTick = (lower + upper) / 2
+  return Math.pow(1.0001, midTick)
+}
 
 export default function PoolsPage() {
-  const { data: walletClient } = useWalletClient()
-  const provider = walletClient
-    ? new ethers.BrowserProvider(walletClient.transport)
+  const provider = typeof window !== 'undefined' && window.ethereum
+    ? new ethers.BrowserProvider(window.ethereum)
     : undefined
+
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
   const { tokens } = useTokens()
   const { pools, addPool } = usePools()
@@ -69,7 +66,7 @@ export default function PoolsPage() {
     if (!provider) return
     const signer = await provider.getSigner()
     await removeLiquidity(signer, tokenId, liquidity)
-    // refresh positions
+
     if (!POSITION_MANAGER_ADDRESS) {
       throw new Error('POSITION_MANAGER_ADDRESS is not set')
     }

@@ -1,15 +1,38 @@
-import { createConfig, http, ethersTransport } from 'wagmi'
-import { mainnet } from 'wagmi/chains'
-import { metaMask, walletConnect } from '@wagmi/connectors'
+import { createConfig, http } from 'wagmi'
+import { metaMask, walletConnect } from 'wagmi/connectors'
 
-export const chains = [mainnet]
+export const cypherium = {
+  id: 16166,
+  name: 'Cypherium',
+  nativeCurrency: {
+    name: 'Cypher',
+    symbol: 'CPH',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://pubnodes.cypherium.io'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Cypherium Explorer',
+      url: 'https://explorer.cypherium.io',
+    },
+  },
+}
 
 export const config = createConfig({
-  chains,
+  chains: [cypherium],
   connectors: [
-    metaMask({ chains }),
-    walletConnect({ projectId: 'wagmi-default' }),
+    metaMask(),
+    walletConnect({
+      projectId: 'c1d4a9f663adfcabe906db1a885e8b21',
+      showQrModal: true,
+    }),
   ],
-  transports: { [mainnet.id]: http() },
+  transports: {
+    [cypherium.id]: http(cypherium.rpcUrls.default.http[0]),
+  },
   ssr: true,
 })

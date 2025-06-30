@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { ethers } from 'ethers'
+import { isAddress, parseAbi, type Address } from 'viem'
+import { usePublicClient } from 'wagmi'
 import { useTokens } from '../context/TokensContext'
-import { useWalletClient } from 'wagmi'
-import ERC20ABI from '../lib/abis/ERC20.json'
+
+const ERC20ParsedAbi = parseAbi([
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+])
 
 export default function SearchTokenForm() {
-  const { data: walletClient } = useWalletClient()
-  const provider = walletClient
-    ? new ethers.BrowserProvider(walletClient.transport)
-    : undefined
+  const publicClient = usePublicClient({ chainId: 16166 })
   const { tokens, addToken } = useTokens()
   const [address, setAddress] = useState('')
   const [error, setError] = useState('')
@@ -17,30 +18,52 @@ export default function SearchTokenForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!provider) {
-      setError('Wallet not connected')
+
+    if (!publicClient) {
+      setError('Public client not initialized')
       return
     }
-    if (!ethers.isAddress(address)) {
+
+    if (!isAddress(address)) {
       setError('Invalid address')
       return
     }
-    const exists = tokens.some(t => t.address.toLowerCase() === address.toLowerCase())
+
+    const exists = tokens.some(
+      (t) => t.address.toLowerCase() === address.toLowerCase()
+    )
     if (exists) {
       setError('Token already added')
       return
     }
+
     try {
       setLoading(true)
-      const erc20 = new ethers.Contract(address, ERC20ABI, provider)
-      const [symbol, decimals] = await Promise.all([
-        erc20.symbol(),
-        erc20.decimals()
-      ])
-      await addToken({ symbol, address: address.toLowerCase(), decimals: Number(decimals) })
+
+      const symbol = await publicClient.readContract({
+        address: address as Address,
+        abi: ERC20ParsedAbi,
+        functionName: 'symbol',
+      })
+
+      const decimals = await publicClient.readContract({
+        address: address as Address,
+        abi: ERC20ParsedAbi,
+        functionName: 'decimals',
+      })
+
+      await addToken({
+        symbol: symbol as string,
+        address: address.toLowerCase(),
+        decimals: Number(decimals),
+      })
+
       setAddress('')
-    } catch {
-      setError('Failed to fetch token info')
+    } catch (e) {
+      console.error(e)
+      setError(
+        e instanceof Error ? e.message : 'Failed to fetch token info'
+      )
     } finally {
       setLoading(false)
     }
@@ -54,7 +77,7 @@ export default function SearchTokenForm() {
         type="text"
         placeholder="Token address"
         value={address}
-        onChange={(e) => setAddress(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAddress(e.target.value)}
         required
       />
       <button type="submit" style={{ marginLeft: 10 }} disabled={loading}>
