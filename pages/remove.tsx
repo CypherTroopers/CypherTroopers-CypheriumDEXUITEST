@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react'
-import { ethers } from 'ethers'
+import { useEffect } from 'react'
 import RemoveLiquidityForm from '../components/RemoveLiquidityForm'
 import Link from 'next/link'
+import { useWallet } from '../context/WalletContext'
 
 export default function RemovePage() {
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null)
+  const { provider, connectWallet } = useWallet()
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      const browserProvider = new ethers.BrowserProvider((window as any).ethereum)
-      setProvider(browserProvider)
-    }
+    connectWallet()
   }, [])
 
   return (

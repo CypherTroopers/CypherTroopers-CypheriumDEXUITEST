@@ -11,6 +11,7 @@ import { fetchPools, PoolInfo } from '../lib/fetchPools'
 import { useTokens } from '../context/TokensContext'
 import { usePools } from '../context/PoolsContext'
 import { addLiquidity } from '../lib/addLiquidity'
+import { useWallet } from '../context/WalletContext'
 
 // ERC20 approve 用の ABI
 const ERC20_ABI = [
@@ -24,7 +25,7 @@ const ERC20_ABI = [
   }
 
 export default function PoolsPage() {
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const { provider, connectWallet } = useWallet()
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
   const { tokens } = useTokens()
   const { pools, addPool } = usePools()
@@ -33,21 +34,6 @@ export default function PoolsPage() {
   const [searching, setSearching] = useState(false)
 
   useEffect(() => {
-    const connectWallet = async () => {
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        const ethereum = (window as any).ethereum
-        try {
-          await ethereum.request({ method: 'eth_requestAccounts' })
-          const browserProvider = new ethers.BrowserProvider(ethereum)
-          setProvider(browserProvider)
-          console.log("✅ Wallet connected")
-        } catch (err) {
-          console.error("User denied wallet connection or error occurred:", err)
-        }
-      } else {
-        console.error("MetaMask not found")
-      }
-    }
     connectWallet()
   }, [])
 
