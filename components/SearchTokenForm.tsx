@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { isAddress, parseAbi, type Address } from 'viem'
-import { usePublicClient } from 'wagmi'
+import { isAddress } from 'viem'
+import { ethers } from 'ethers'
+import { useWallet } from '../context/WalletContext'
 import { useTokens } from '../context/TokensContext'
 
-const ERC20ParsedAbi = parseAbi([
+const ERC20_ABI = [
   'function symbol() view returns (string)',
-  'function decimals() view returns (uint8)',
-])
+'function decimals() view returns (uint8)'
+]
 
 export default function SearchTokenForm() {
-  const publicClient = usePublicClient({ chainId: 16166 })
+  const { provider } = useWallet()
   const { tokens, addToken } = useTokens()
   const [address, setAddress] = useState('')
   const [error, setError] = useState('')
@@ -19,8 +20,8 @@ export default function SearchTokenForm() {
     e.preventDefault()
     setError('')
 
-    if (!publicClient) {
-      setError('Public client not initialized')
+    if (!provider) {
+      setError('Wallet not connected')
       return
     }
 
@@ -40,17 +41,9 @@ export default function SearchTokenForm() {
     try {
       setLoading(true)
 
-      const symbol = await publicClient.readContract({
-        address: address as Address,
-        abi: ERC20ParsedAbi,
-        functionName: 'symbol',
-      })
-
-      const decimals = await publicClient.readContract({
-        address: address as Address,
-        abi: ERC20ParsedAbi,
-        functionName: 'decimals',
-      })
+      const erc20 = new ethers.Contract(address, ERC20_ABI, provider)
+      const symbol: string = await erc20.symbol()
+      const decimals: number = await erc20.decimals()
 
       await addToken({
         symbol: symbol as string,

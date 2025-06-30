@@ -1,18 +1,16 @@
 // components/AddLiquidityForm.tsx
-import { useState } from 'react';
-import { useDexSettings } from '../context/DexSettingsContext';
-import { approveToken } from '../lib/approve';
-import { addLiquidity, ensurePoolInitialized } from '../lib/addLiquidity';
-import { ethers } from 'ethers';
-import ERC20ABI from '../lib/abis/ERC20.json';
+import { useState } from 'react'
+import { useDexSettings } from '../context/DexSettingsContext'
+import { approveToken } from '../lib/approve'
+import { addLiquidity, ensurePoolInitialized } from '../lib/addLiquidity'
+import { ethers } from 'ethers'
+import ERC20ABI from '../lib/abis/ERC20.json'
 import { getTickFromPrice, nearestUsableTick } from '../lib/tickMath'
-import { POSITION_MANAGER_ADDRESS } from '../lib/addresses';
+import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
+import { useWallet } from '../context/WalletContext'
 
-interface Props {
-  provider: ethers.BrowserProvider;
-}
-
-export default function AddLiquidityForm({ provider }: Props) {
+export default function AddLiquidityForm() {
+  const { provider } = useWallet()
   const [token0, setToken0] = useState('');
   const [token1, setToken1] = useState('');
   const [amount0, setAmount0] = useState('');
@@ -27,6 +25,10 @@ export default function AddLiquidityForm({ provider }: Props) {
     e.preventDefault();
 
     try {
+      if (!provider) {
+        setStatus('Wallet not connected');
+        return;
+      }
       if (!POSITION_MANAGER_ADDRESS) {
         throw new Error('POSITION_MANAGER_ADDRESS is not set');
       }

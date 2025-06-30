@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { ethers } from 'ethers'
 import { removeLiquidity } from '../lib/removeLiquidity'
+import { useWallet } from '../context/WalletContext'
 
-interface Props {
-  provider: ethers.BrowserProvider
-}
-
-export default function RemoveLiquidityForm({ provider }: Props) {
+export default function RemoveLiquidityForm() {
+  const { provider } = useWallet()
   const [tokenId, setTokenId] = useState('')
   const [liquidity, setLiquidity] = useState('')
   const [status, setStatus] = useState('')
@@ -14,6 +12,10 @@ export default function RemoveLiquidityForm({ provider }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+            if (!provider) {
+        setStatus('Wallet not connected')
+        return
+      }
       const signer = await provider.getSigner()
       setStatus('Removing liquidity...')
       await removeLiquidity(signer, Number(tokenId), liquidity)

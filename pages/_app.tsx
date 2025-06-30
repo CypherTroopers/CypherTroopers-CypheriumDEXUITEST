@@ -3,8 +3,7 @@ import '../styles/globals.css'
 import Navbar from '../components/Navbar'
 import { TokensProvider } from '../context/TokensContext'
 import { PoolsProvider } from '../context/PoolsContext'
-import { WagmiConfig } from 'wagmi'
-import { config } from '../lib/wagmi'
+import { WalletProvider } from '../context/WalletContext'
 import { DexSettingsProvider } from '../context/DexSettingsContext'
 import { appWithTranslation } from 'next-i18next'
 import nextI18NextConfig from '../next-i18next.config'
@@ -20,7 +19,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <WagmiConfig config={config}>
+      <WalletProvider>
         <TokensProvider>
           <PoolsProvider>
             <DexSettingsProvider>
@@ -29,7 +28,7 @@ function MyApp({ Component, pageProps }: AppProps) {
             </DexSettingsProvider>
           </PoolsProvider>
         </TokensProvider>
-      </WagmiConfig>
+      </WalletProvider>
     </QueryClientProvider>
   )
 }

@@ -10,18 +10,13 @@ import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
 import { SWAP_ROUTER_ADDRESS } from '../lib/addresses'
 import { useDexSettings } from '../context/DexSettingsContext'
-import { useAccount } from 'wagmi'
+import { useWallet } from '../context/WalletContext'
 
 export default function Home() {
   const { tokens, addToken } = useTokens()
   const { pools, addPool } = usePools()
   const { poolFee } = useDexSettings()
-  const { address } = useAccount()
-
-  const provider =
-    typeof window !== 'undefined' && window.ethereum
-      ? new ethers.BrowserProvider(window.ethereum)
-      : undefined
+  const { provider, address } = useWallet()
 
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
   const [toToken, setToToken] = useState<TokenInfo>(tokens[1])

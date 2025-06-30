@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import AddLiquidityForm from '../components/AddLiquidityForm'
 import { ethers } from 'ethers'
+import { useWallet } from '../context/WalletContext'
 import NonfungiblePositionManagerABI from '../abi/NonfungiblePositionManager.json'
 import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
 import { removeLiquidity } from '../lib/removeLiquidity'
@@ -21,9 +22,7 @@ const computeDefaultPrice = (lower: number, upper: number) => {
 }
 
 export default function PoolsPage() {
-  const provider = typeof window !== 'undefined' && window.ethereum
-    ? new ethers.BrowserProvider(window.ethereum)
-    : undefined
+  const { provider } = useWallet()
 
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
   const { tokens } = useTokens()
@@ -135,7 +134,7 @@ export default function PoolsPage() {
       <p style={{ marginTop: 20 }}>Add Liquidity</p>
 
       {provider ? (
-        <AddLiquidityForm provider={provider} />
+        <AddLiquidityForm />
       ) : (
         <p>🦊 MetaMask に接続してください。</p>
       )}

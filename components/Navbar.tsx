@@ -1,17 +1,12 @@
 // components/Navbar.tsx
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useAccount, useConnect } from 'wagmi'
+import { useWallet } from '../context/WalletContext'
 import { useTranslation } from 'next-i18next'
 
 const Navbar = () => {
   const router = useRouter()
-  const { address } = useAccount()
-  const { connect, connectors } = useConnect()
-  const connectWallet = () => {
-    const connector = connectors[0]
-    if (connector) connect({ connector })
-  }
+  const { address, connectWallet } = useWallet()
   const { t } = useTranslation('common')
   const addrShort = (addr: string) => `${addr.slice(0,6)}...${addr.slice(-4)}`
   const isActive = (path: string) => router.pathname === path
