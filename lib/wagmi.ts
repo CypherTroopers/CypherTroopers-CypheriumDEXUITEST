@@ -1,21 +1,15 @@
-import { createConfig, http } from 'wagmi'
+import { createConfig, http, ethersTransport } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import { metaMask, walletConnect } from 'wagmi/connectors'
-import { createPublicClient } from 'viem'
+import { metaMask, walletConnect } from '@wagmi/connectors'
 
 export const chains = [mainnet]
-
-export const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http(),
-})
 
 export const config = createConfig({
   chains,
   connectors: [
-    new MetaMaskConnector({ chains }),
-    new WalletConnectConnector({ chains, options: { projectId: 'wagmi-default' } }),
+    metaMask({ chains }),
+    walletConnect({ projectId: 'wagmi-default' }),
   ],
-  transports: { [mainnet.id]: ethersTransport(http()) },
+  transports: { [mainnet.id]: http() },
   ssr: true,
 })
