@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { ethers } from 'ethers'
 
 interface WalletContextValue {
@@ -14,6 +14,25 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState('')
   const [provider, setProvider] = useState<ethers.BrowserProvider>()
   const [signer, setSigner] = useState<ethers.JsonRpcSigner>()
+
+  useEffect(() => {
+    const ethereum = (window as any).ethereum
+    if (!ethereum) return
+
+    ethereum
+      .request({ method: 'eth_accounts' })
+      .then(async (accounts: string[]) => {
+        if (accounts && accounts.length > 0) {
+          const prov = new ethers.BrowserProvider(ethereum)
+          const signerObj = await prov.getSigner()
+          const addr = await signerObj.getAddress()
+          setProvider(prov)
+          setSigner(signerObj)
+          setAccount(addr)
+        }
+      })
+      .catch((err: any) => console.error(err))
+  }, [])
 
   const connectWallet = async () => {
     const ethereum = (window as any).ethereum
