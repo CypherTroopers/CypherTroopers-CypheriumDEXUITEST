@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { ethers } from 'ethers'
 import { useTokens } from '../context/TokensContext'
-import { useWallet } from '../context/WalletContext'
+import { useWalletClient } from 'wagmi'
 import ERC20ABI from '../lib/abis/ERC20.json'
 
 export default function SearchTokenForm() {
-  const { provider } = useWallet()
+  const { data: walletClient } = useWalletClient()
+  const provider = walletClient
+    ? new ethers.BrowserProvider(walletClient.transport)
+    : undefined
   const { tokens, addToken } = useTokens()
   const [address, setAddress] = useState('')
   const [error, setError] = useState('')

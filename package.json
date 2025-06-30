@@ -16,7 +16,9 @@
     "next": "15.3.4",
     "next-i18next": "^15.4.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "wagmi": "^2.4.8",
+    "viem": "^2.4.9"
   },
   "devDependencies": {
     "@types/node": "^20",

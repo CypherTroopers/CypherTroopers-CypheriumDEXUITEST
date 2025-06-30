@@ -10,13 +10,17 @@ import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
 import { SWAP_ROUTER_ADDRESS } from '../lib/addresses'
 import { useDexSettings } from '../context/DexSettingsContext'
-import { useWallet } from '../context/WalletContext'
+import { useAccount, useWalletClient } from 'wagmi'
 
 export default function Home() {
   const { tokens, addToken } = useTokens()
   const { pools, addPool } = usePools()
   const { poolFee } = useDexSettings()
-  const { provider, signer, account } = useWallet()
+    const { address } = useAccount()
+  const { data: walletClient } = useWalletClient()
+  const provider = walletClient
+    ? new ethers.BrowserProvider(walletClient.transport)
+    : undefined
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
   const [toToken, setToToken] = useState<TokenInfo>(tokens[1])
   const [amountIn, setAmountIn] = useState('')
@@ -62,7 +66,8 @@ export default function Home() {
   }
 
   const handleSwap = async () => {
-    if (!signer || !amountIn) return
+    if (!provider || !amountIn) return
+    const signer = await provider.getSigner()
     await executeSwap(signer, fromToken, toToken, amountIn, poolFee)
   }
 
@@ -104,7 +109,7 @@ export default function Home() {
   return (
     <main style={{ padding: 20 }}>
       <h1>Cypherium DEX</h1>
-      <div>Connected: {account ? `${account.slice(0, 6)}...${account.slice(-4)}` : '未接続'}</div>
+      <div>Connected: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '未接続'}</div>
 
       <div style={{ marginTop: 30 }}>
         <div>

@@ -1,12 +1,17 @@
 // components/Navbar.tsx
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useWallet } from '../context/WalletContext'
+import { useAccount, useConnect } from 'wagmi'
 import { useTranslation } from 'next-i18next'
 
 const Navbar = () => {
   const router = useRouter()
-  const { account, connectWallet } = useWallet()
+  const { address } = useAccount()
+  const { connect, connectors } = useConnect()
+  const connectWallet = () => {
+    const connector = connectors[0]
+    if (connector) connect({ connector })
+  }
   const { t } = useTranslation('common')
   const addrShort = (addr: string) => `${addr.slice(0,6)}...${addr.slice(-4)}`
   const isActive = (path: string) => router.pathname === path
@@ -24,8 +29,8 @@ const Navbar = () => {
       <Link href="/pools" style={{ fontWeight: isActive('/pools') ? 'bold' : 'normal' }}>{t('pools')}</Link>
       <Link href="/dashboard" style={{ fontWeight: isActive('/dashboard') ? 'bold' : 'normal' }}>{t('dashboard')}</Link>
       <div style={{ marginLeft: 'auto' }}>
-        {account ? (
-          <span>{addrShort(account)}</span>
+        {address ? (
+          <span>{addrShort(address)}</span>
         ) : (
           <button onClick={connectWallet}>{t('connectWallet')}</button>
         )}
