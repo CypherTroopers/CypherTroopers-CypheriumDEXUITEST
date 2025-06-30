@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import AddLiquidityForm from '../components/AddLiquidityForm'
 import { ethers } from 'ethers'
+import CreatePoolForm from '../components/CreatePoolForm'
 import { useWallet } from '../context/WalletContext'
 import NonfungiblePositionManagerABI from '../abi/NonfungiblePositionManager.json'
 import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
@@ -26,7 +27,7 @@ export default function PoolsPage() {
 
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
   const { tokens } = useTokens()
-  const { pools, addPool } = usePools()
+  const { pools, addPool, removePool } = usePools()
   const [searchAddress, setSearchAddress] = useState('')
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
@@ -138,6 +139,7 @@ export default function PoolsPage() {
       ) : (
         <p>🦊 MetaMask に接続してください。</p>
       )}
+      {provider && <CreatePoolForm />}
 
       <div style={{ marginTop: 30 }}>
         <h2>Find Pools</h2>
@@ -172,6 +174,9 @@ export default function PoolsPage() {
             {pools.map((p, i) => (
               <li key={i}>
                 {p.token0}/{p.token1} (fee {p.fee}) - {p.pool}
+                <button style={{ marginLeft: 10 }} onClick={() => removePool(p.pool)}>
+                  Delete
+                </button>
               </li>
             ))}
           </ul>

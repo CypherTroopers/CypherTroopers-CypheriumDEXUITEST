@@ -10,6 +10,7 @@ export interface PoolInfoStored {
 interface PoolsContextValue {
   pools: PoolInfoStored[]
   addPool: (pool: PoolInfoStored) => Promise<void>
+  removePool: (poolAddress: string) => Promise<void>
 }
 
 const PoolsContext = createContext<PoolsContextValue | undefined>(undefined)
@@ -48,9 +49,18 @@ export function PoolsProvider({ children }: Props) {
       // ignore
     }
   }
+  const removePool = async (poolAddress: string) => {
+    setPools(prev => prev.filter(p => p.pool.toLowerCase() !== poolAddress.toLowerCase()))
+    try {
+      const params = new URLSearchParams({ pool: poolAddress })
+      await fetch(`/api/pools?${params.toString()}`, { method: 'DELETE' })
+    } catch {
+      // ignore
+    }
+  }
 
   return (
-    <PoolsContext.Provider value={{ pools, addPool }}>
+    <PoolsContext.Provider value={{ pools, addPool, removePool }}>
       {children}
     </PoolsContext.Provider>
   )

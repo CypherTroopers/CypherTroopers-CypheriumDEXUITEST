@@ -38,5 +38,19 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(200).json({ success: true })
     return
   }
+  if (req.method === 'DELETE') {
+    const poolAddr = (req.query.pool || req.body?.pool) as string | undefined
+    if (!poolAddr) {
+      res.status(400).json({ error: 'pool parameter required' })
+      return
+    }
+    const pools = readPools()
+    const filtered = pools.filter(
+      p => p.pool.toLowerCase() !== poolAddr.toLowerCase()
+    )
+    writePools(filtered)
+    res.status(200).json({ success: true })
+    return
+  }
   res.status(405).end()
 }
