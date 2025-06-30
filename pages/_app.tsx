@@ -7,6 +7,10 @@ import { WalletProvider } from '../context/WalletContext'
 import { DexSettingsProvider } from '../context/DexSettingsContext'
 import { appWithTranslation } from 'next-i18next'
 import nextI18NextConfig from '../next-i18next.config'
+import { validateAddresses } from '../lib/addresses'
+
+// Ensure required environment variables are set on startup
+validateAddresses()
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (

@@ -82,12 +82,26 @@ export async function ensurePoolInitialized(
     )
   } catch (err: any) {
     const msg = err?.shortMessage || err?.message || String(err)
+    // Log arguments for easier debugging when the static call fails
+    console.error(
+      `createAndInitializePoolIfNecessary.staticCall failed`,
+      {
+        token0,
+        token1,
+        fee,
+        price: finalPrice,
+      }
+    )
+    // Known failure cases:
+    // 1. missing revert data - the contract reverted without a message.
+    // 2. pool already initialized or exists.
     if (msg.includes('missing revert data')) {
       console.warn('createAndInitializePoolIfNecessary.staticCall missing revert data, continuing')
     } else if (msg.includes('already') && (msg.includes('initialized') || msg.includes('exists'))) {
       return
     } else {
-      throw new Error(msg)
+      // Surface arguments so callers/UI can present them
+      throw new Error(`Pool initialization failed: ${msg}. token0=${token0}, token1=${token1}, fee=${fee}, price=${finalPrice}`)
     }
   }
 

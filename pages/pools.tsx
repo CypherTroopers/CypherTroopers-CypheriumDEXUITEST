@@ -18,6 +18,11 @@ const ERC20_ABI = [
   "function allowance(address owner, address spender) external view returns (uint256)"
 ]
 
+  const computeDefaultPrice = (lower: number, upper: number) => {
+    const midTick = (lower + upper) / 2
+    return Math.pow(1.0001, midTick)
+  }
+
 export default function PoolsPage() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
@@ -26,17 +31,6 @@ export default function PoolsPage() {
   const [searchAddress, setSearchAddress] = useState('')
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
-
-  // AddLiquidityForm 用 state
-  const [token0, setToken0] = useState('')
-  const [token1, setToken1] = useState('')
-  const [fee, setFee] = useState(3000)
-  const [tickLower, setTickLower] = useState(-60000)
-  const [tickUpper, setTickUpper] = useState(60000)
-  const [amount0Desired, setAmount0Desired] = useState('')
-  const [amount1Desired, setAmount1Desired] = useState('')
-  const [slippage, setSlippage] = useState(0.5)
-  const [price, setPrice] = useState('')
 
   useEffect(() => {
     const connectWallet = async () => {
@@ -138,60 +132,6 @@ export default function PoolsPage() {
     }
   }
 
-  const handleAddLiquidity = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!provider) return
-
-    const signer = await provider.getSigner()
-    const userAddress = await signer.getAddress()
-
-    try {
-      // Approve token0
-      if (token0 && amount0Desired) {
-        const token0Contract = new ethers.Contract(token0, ERC20_ABI, signer)
-        const allowance0 = await token0Contract.allowance(userAddress, POSITION_MANAGER_ADDRESS)
-        if (allowance0 < BigInt(amount0Desired)) {
-          console.log(`Approving token0: ${token0}`)
-          const tx0 = await token0Contract.approve(POSITION_MANAGER_ADDRESS, amount0Desired)
-          await tx0.wait()
-        } else {
-          console.log(`Token0 allowance sufficient: ${allowance0.toString()}`)
-        }
-      }
-
-      // Approve token1
-      if (token1 && amount1Desired) {
-        const token1Contract = new ethers.Contract(token1, ERC20_ABI, signer)
-        const allowance1 = await token1Contract.allowance(userAddress, POSITION_MANAGER_ADDRESS)
-        if (allowance1 < BigInt(amount1Desired)) {
-          console.log(`Approving token1: ${token1}`)
-          const tx1 = await token1Contract.approve(POSITION_MANAGER_ADDRESS, amount1Desired)
-          await tx1.wait()
-        } else {
-          console.log(`Token1 allowance sufficient: ${allowance1.toString()}`)
-        }
-      }
-
-      await addLiquidity(
-        signer,
-        token0,
-        token1,
-        fee,
-        tickLower,
-        tickUpper,
-        amount0Desired,
-        amount1Desired,
-        slippage,
-        price !== "" ? parseFloat(price) : undefined
-      )
-
-      alert("Liquidity added successfully!")
-    } catch (err: any) {
-      console.error(err)
-      alert(err?.message || "Add liquidity failed")
-    }
-  }
-
   return (
     <main style={{ padding: 20 }}>
       <h1>Pools</h1>
@@ -214,73 +154,7 @@ export default function PoolsPage() {
       <p style={{ marginTop: 20 }}>Add Liquidity</p>
 
       {provider ? (
-        <form onSubmit={handleAddLiquidity} style={{ marginBottom: 20 }}>
-          <input
-            type="text"
-            placeholder="Token0 Address"
-            value={token0}
-            onChange={e => setToken0(e.target.value)}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="text"
-            placeholder="Token1 Address"
-            value={token1}
-            onChange={e => setToken1(e.target.value)}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="number"
-            placeholder="Fee (e.g. 3000)"
-            value={fee}
-            onChange={e => setFee(Number(e.target.value))}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="number"
-            placeholder="Tick Lower"
-            value={tickLower}
-            onChange={e => setTickLower(Number(e.target.value))}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="number"
-            placeholder="Tick Upper"
-            value={tickUpper}
-            onChange={e => setTickUpper(Number(e.target.value))}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="text"
-            placeholder="Amount0 Desired"
-            value={amount0Desired}
-            onChange={e => setAmount0Desired(e.target.value)}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="text"
-            placeholder="Amount1 Desired"
-            value={amount1Desired}
-            onChange={e => setAmount1Desired(e.target.value)}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Slippage (%)"
-            value={slippage}
-            onChange={e => setSlippage(Number(e.target.value))}
-            style={{ marginRight: 10 }}
-          />
-          <input
-            type="text"
-            placeholder="Initial price (e.g. 1.0)"
-            value={price}
-            onChange={e => setPrice(e.target.value)}
-            style={{ marginRight: 10 }}
-          />
-          <button type="submit">Add Liquidity</button>
-        </form>
+        <AddLiquidityForm provider={provider} />
       ) : (
         <p>🦊 MetaMask に接続してください。</p>
       )}
