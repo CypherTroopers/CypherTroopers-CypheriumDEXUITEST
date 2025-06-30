@@ -27,9 +27,9 @@ const Navbar = () => {
         {account ? (
           <span>{addrShort(account)}</span>
         ) : (
-          <button onClick={connectWallet}>Connect Wallet</button>
+          <button onClick={connectWallet}>{t('connectWallet')}</button>
         )}
-      </div>  
+      </div>
     </nav>
   )
 }

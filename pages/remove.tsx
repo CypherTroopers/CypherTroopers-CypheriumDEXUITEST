@@ -1,14 +1,9 @@
-import { useEffect } from 'react'
 import RemoveLiquidityForm from '../components/RemoveLiquidityForm'
 import Link from 'next/link'
 import { useWallet } from '../context/WalletContext'
 
 export default function RemovePage() {
-  const { provider, connectWallet } = useWallet()
-
-  useEffect(() => {
-    connectWallet()
-  }, [])
+  const { provider } = useWallet()
 
   return (
     <main style={{ padding: 20 }}>

@@ -5,5 +5,6 @@
   "dashboard": "Dashboard",
   "dashboardTitle": "Dashboard",
   "pastTransactions": "Past Transactions",
-  "poolMetrics": "Pool Metrics"
+  "poolMetrics": "Pool Metrics",
+  "connectWallet": "Connect Wallet"
 }

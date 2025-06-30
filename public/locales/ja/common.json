@@ -5,5 +5,6 @@
   "dashboard": "ダッシュボード",
   "dashboardTitle": "ダッシュボード",
   "pastTransactions": "過去の取引",
-  "poolMetrics": "プールの指標"
+  "poolMetrics": "プールの指標",
+  "connectWallet": "ウォレットに接続"
 }

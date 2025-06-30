@@ -16,7 +16,7 @@ export default function Home() {
   const { tokens, addToken } = useTokens()
   const { pools, addPool } = usePools()
   const { poolFee } = useDexSettings()
-  const { provider, signer, account, connectWallet } = useWallet()
+  const { provider, signer, account } = useWallet()
   const [fromToken, setFromToken] = useState<TokenInfo>(tokens[0])
   const [toToken, setToToken] = useState<TokenInfo>(tokens[1])
   const [amountIn, setAmountIn] = useState('')
@@ -30,10 +30,6 @@ export default function Home() {
     if (tokens.length > 0) setFromToken(tokens[0])
     if (tokens.length > 1) setToToken(tokens[1])
   }, [tokens])
-
-  useEffect(() => {
-    connectWallet()
-  }, [])
 
   // Detect new pools on chain and automatically add tokens
   useEffect(() => {

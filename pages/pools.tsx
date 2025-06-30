@@ -1,5 +1,4 @@
 // pages/pools.tsx
-
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import AddLiquidityForm from '../components/AddLiquidityForm'
@@ -25,17 +24,13 @@ const ERC20_ABI = [
   }
 
 export default function PoolsPage() {
-  const { provider, connectWallet } = useWallet()
+  const { provider } = useWallet()
   const [positions, setPositions] = useState<{ tokenId: number; liquidity: string; token0: string; token1: string }[]>([])
   const { tokens } = useTokens()
   const { pools, addPool } = usePools()
   const [searchAddress, setSearchAddress] = useState('')
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
-
-  useEffect(() => {
-    connectWallet()
-  }, [])
 
   useEffect(() => {
     const fetchPositions = async () => {
