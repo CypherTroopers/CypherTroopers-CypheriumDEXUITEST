@@ -1,9 +1,10 @@
 {
   "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/swap": "pages/swap.js",
+  "/_error": "pages/_error.js",
   "/tokens": "pages/tokens.js",
   "/api/tokens": "pages/api/tokens.js",
+  "/swap": "pages/swap.js",
+  "/": "pages/index.js",
   "/api/pools": "pages/api/pools.js"
 }
