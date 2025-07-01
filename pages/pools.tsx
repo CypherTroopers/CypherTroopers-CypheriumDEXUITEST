@@ -33,6 +33,7 @@ export default function PoolsPage() {
   const [searchAddress, setSearchAddress] = useState('')
   const [foundPools, setFoundPools] = useState<PoolInfo[]>([])
   const [searching, setSearching] = useState(false)
+  const [selectedPair, setSelectedPair] = useState<{ token0: string; token1: string } | null>(null)
 
   useEffect(() => {
     const fetchPositions = async () => {
@@ -131,9 +132,17 @@ export default function PoolsPage() {
       <p style={{ marginTop: 20 }}>Add Liquidity</p>
 
       {provider ? (
-        <AddLiquidityForm />
+        <AddLiquidityForm
+          initialToken0={selectedPair?.token0}
+          initialToken1={selectedPair?.token1}
+        />
       ) : (
         <p>🦊 MetaMask に接続してください。</p>
+      )}
+      {selectedPair && (
+        <p style={{ marginTop: 10 }}>
+          Adding liquidity for {selectedPair.token0} / {selectedPair.token1}
+        </p>
       )}
       {provider && <CreatePoolForm />}
 
@@ -155,6 +164,17 @@ export default function PoolsPage() {
             {foundPools.map((p, i) => (
               <li key={i}>
                 {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
+                <button
+                  style={{ marginLeft: 10 }}
+                  onClick={() =>
+                    setSelectedPair({
+                      token0: searchAddress.toLowerCase(),
+                      token1: p.token.address.toLowerCase(),
+                    })
+                  }
+                >
+                  Add Liquidity
+                </button>
               </li>
             ))}
           </ul>

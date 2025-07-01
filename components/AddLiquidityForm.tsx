@@ -1,5 +1,5 @@
 // components/AddLiquidityForm.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useDexSettings } from '../context/DexSettingsContext'
 import { approveToken } from '../lib/approve'
 import { addLiquidity, ensurePoolInitialized } from '../lib/addLiquidity'
@@ -11,15 +11,28 @@ import { getAddress } from '../lib/addresses'
 const POSITION_MANAGER_ADDRESS = getAddress('NEXT_PUBLIC_POSITION_MANAGER_ADDRESS')
 import { useWallet } from '../context/WalletContext'
 
-export default function AddLiquidityForm() {
+interface AddLiquidityFormProps {
+  initialToken0?: string;
+  initialToken1?: string;
+}
+
+export default function AddLiquidityForm({ initialToken0 = '', initialToken1 = '' }: AddLiquidityFormProps) {
   const { provider } = useWallet()
-  const [token0, setToken0] = useState('');
-  const [token1, setToken1] = useState('');
+  const [token0, setToken0] = useState(initialToken0)
+  const [token1, setToken1] = useState(initialToken1)
   const [amount0, setAmount0] = useState('');
   const [amount1, setAmount1] = useState('');
   const [priceMin, setPriceMin] = useState('0.95');
   const [priceMax, setPriceMax] = useState('1.05');
   const [status, setStatus] = useState('');
+
+  useEffect(() => {
+    setToken0(initialToken0)
+  }, [initialToken0])
+
+  useEffect(() => {
+    setToken1(initialToken1)
+  }, [initialToken1])
 
   const { poolFee, setPoolFee, slippage, setSlippage } = useDexSettings();
 
