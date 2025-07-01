@@ -1,5 +1,6 @@
 import type { NextConfig } from "next"
-import 'dotenv/config'
+import * as dotenv from 'dotenv'
+dotenv.config({ path: '.env.local' })
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
