@@ -8,7 +8,9 @@ import { fetchPools, type PoolInfo } from '../lib/fetchPools'
 import { fetchQuote } from '../lib/fetchQuote'
 import { approveToken } from '../lib/approve'
 import { executeSwap } from '../lib/executeSwap'
-import { SWAP_ROUTER_ADDRESS } from '../lib/addresses'
+import { getAddress } from '../lib/addresses'
+
+const SWAP_ROUTER_ADDRESS = getAddress('NEXT_PUBLIC_SWAP_ROUTER_ADDRESS')
 import { useDexSettings } from '../context/DexSettingsContext'
 import { useWallet } from '../context/WalletContext'
 

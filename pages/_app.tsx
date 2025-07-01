@@ -5,8 +5,6 @@ import { TokensProvider } from '../context/TokensContext'
 import { PoolsProvider } from '../context/PoolsContext'
 import { WalletProvider } from '../context/WalletContext'
 import { DexSettingsProvider } from '../context/DexSettingsContext'
-import { appWithTranslation } from 'next-i18next'
-import nextI18NextConfig from '../next-i18next.config'
 import { validateAddresses } from '../lib/addresses'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
@@ -40,4 +38,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   )
 }
 
-export default appWithTranslation(MyApp, nextI18NextConfig)
+export default MyApp

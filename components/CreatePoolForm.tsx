@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { ethers } from 'ethers'
 import { useWallet } from '../context/WalletContext'
 import { ensurePoolInitialized } from '../lib/addLiquidity'
-import { UNISWAP_V3_FACTORY_ADDRESS } from '../lib/addresses'
+import { getAddress } from '../lib/addresses'
+
+const UNISWAP_V3_FACTORY_ADDRESS = getAddress('NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS')
 import FactoryABI from '../abi/UniswapV3Factory.json'
 import { useDexSettings } from '../context/DexSettingsContext'
 import { usePools } from '../context/PoolsContext'

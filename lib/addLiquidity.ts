@@ -4,7 +4,9 @@ import { Contract, parseUnits } from 'ethers'
 import NonfungiblePositionManagerABIJson from '../abi/NonfungiblePositionManager.json'
 import { encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
 import JSBI from 'jsbi'
-import { POSITION_MANAGER_ADDRESS } from './addresses'
+import { getAddress } from './addresses'
+
+const POSITION_MANAGER_ADDRESS = getAddress('NEXT_PUBLIC_POSITION_MANAGER_ADDRESS')
 
 const NonfungiblePositionManagerABI =
   (NonfungiblePositionManagerABIJson as any).default || NonfungiblePositionManagerABIJson
@@ -52,9 +54,6 @@ export async function ensurePoolInitialized(
   fee: number,
   price: number
 ) {
-  if (!POSITION_MANAGER_ADDRESS) {
-    throw new Error('POSITION_MANAGER_ADDRESS is not set')
-  }
 
   const sorted = sortTokens(token0, token1, '0', '0')
   const finalPrice = sorted.token0 === token0 ? price : 1 / price
@@ -162,10 +161,6 @@ export async function addLiquidity(
 
   if (lower > upper) {
     [lower, upper] = [upper, lower]
-  }
-
-  if (!POSITION_MANAGER_ADDRESS) {
-    throw new Error('POSITION_MANAGER_ADDRESS is not set')
   }
 
   const positionManager = new Contract(

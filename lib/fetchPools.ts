@@ -1,5 +1,7 @@
 import { ethers } from 'ethers'
-import { UNISWAP_V3_FACTORY_ADDRESS } from './addresses'
+import { getAddress } from './addresses'
+
+const UNISWAP_V3_FACTORY_ADDRESS = getAddress('NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS')
 import { TokenInfo } from './tokens'
 
 const FACTORY_ABI = [
@@ -17,9 +19,6 @@ export async function fetchPools(
   tokenAddress: string,
   tokens: TokenInfo[]
 ): Promise<PoolInfo[]> {
-  if (!UNISWAP_V3_FACTORY_ADDRESS) {
-    throw new Error('UNISWAP_V3_FACTORY_ADDRESS is not set')
-  }
   const factory = new ethers.Contract(
     UNISWAP_V3_FACTORY_ADDRESS,
     FACTORY_ABI,

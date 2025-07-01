@@ -1,7 +1,9 @@
 import { Contract, MaxUint256 } from 'ethers'
 import { ethers } from 'ethers'
 import NonfungiblePositionManagerABI from '../abi/NonfungiblePositionManager.json'
-import { POSITION_MANAGER_ADDRESS } from './addresses'
+import { getAddress } from './addresses'
+
+const POSITION_MANAGER_ADDRESS = getAddress('NEXT_PUBLIC_POSITION_MANAGER_ADDRESS')
 
 export async function removeLiquidity(
   signer: ethers.Signer,

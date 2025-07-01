@@ -6,7 +6,9 @@ import { addLiquidity, ensurePoolInitialized } from '../lib/addLiquidity'
 import { ethers } from 'ethers'
 import ERC20ABI from '../lib/abis/ERC20.json'
 import { getTickFromPrice, nearestUsableTick } from '../lib/tickMath'
-import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
+import { getAddress } from '../lib/addresses'
+
+const POSITION_MANAGER_ADDRESS = getAddress('NEXT_PUBLIC_POSITION_MANAGER_ADDRESS')
 import { useWallet } from '../context/WalletContext'
 
 export default function AddLiquidityForm() {
@@ -28,9 +30,6 @@ export default function AddLiquidityForm() {
       if (!provider) {
         setStatus('Wallet not connected');
         return;
-      }
-      if (!POSITION_MANAGER_ADDRESS) {
-        throw new Error('POSITION_MANAGER_ADDRESS is not set');
       }
      // 入力バリデーション（BigNumberishエラー対策）
       if (!amount0 || isNaN(Number(amount0)) || Number(amount0) <= 0) {

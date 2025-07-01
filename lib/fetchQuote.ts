@@ -1,7 +1,9 @@
 import { ethers } from 'ethers'
 import { TokenInfo } from './tokens'
 
-import { QUOTER_ADDRESS } from './addresses'
+import { getAddress } from './addresses'
+
+const QUOTER_ADDRESS = getAddress('NEXT_PUBLIC_QUOTER_ADDRESS')
 
 const ABI = [
   'function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)',

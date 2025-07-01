@@ -6,7 +6,9 @@ import { ethers } from 'ethers'
 import CreatePoolForm from '../components/CreatePoolForm'
 import { useWallet } from '../context/WalletContext'
 import NonfungiblePositionManagerABI from '../abi/NonfungiblePositionManager.json'
-import { POSITION_MANAGER_ADDRESS } from '../lib/addresses'
+import { getAddress } from '../lib/addresses'
+
+const POSITION_MANAGER_ADDRESS = getAddress('NEXT_PUBLIC_POSITION_MANAGER_ADDRESS')
 import { removeLiquidity } from '../lib/removeLiquidity'
 import { fetchPools, PoolInfo } from '../lib/fetchPools'
 import { useTokens } from '../context/TokensContext'
@@ -37,9 +39,6 @@ export default function PoolsPage() {
       if (!provider) return
       const signer = await provider.getSigner()
       const address = await signer.getAddress()
-      if (!POSITION_MANAGER_ADDRESS) {
-        throw new Error('POSITION_MANAGER_ADDRESS is not set')
-      }
       const manager = new ethers.Contract(
         POSITION_MANAGER_ADDRESS,
         NonfungiblePositionManagerABI,
@@ -67,9 +66,6 @@ export default function PoolsPage() {
     const signer = await provider.getSigner()
     await removeLiquidity(signer, tokenId, liquidity)
 
-    if (!POSITION_MANAGER_ADDRESS) {
-      throw new Error('POSITION_MANAGER_ADDRESS is not set')
-    }
     const manager = new ethers.Contract(
       POSITION_MANAGER_ADDRESS,
       NonfungiblePositionManagerABI,

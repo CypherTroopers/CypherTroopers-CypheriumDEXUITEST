@@ -1,11 +1,9 @@
 import type { NextConfig } from "next"
-import nextI18NextConfig from './next-i18next.config'
 import 'dotenv/config'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: ['https://dex.funoncypherium.org'],
-  i18n: nextI18NextConfig.i18n,
   env: {
     NEXT_PUBLIC_WETH9_ADDRESS: process.env.NEXT_PUBLIC_WETH9_ADDRESS?.toLowerCase() || "0x3c4a33f059c5f55059537d93e4a92b9fac389b1b",
     NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS: process.env.NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS?.toLowerCase() || "",

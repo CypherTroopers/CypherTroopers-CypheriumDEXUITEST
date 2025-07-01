@@ -1,6 +1,8 @@
 import { ethers } from 'ethers'
 import { TokenInfo } from './tokens'
-import { SWAP_ROUTER_ADDRESS } from './addresses'
+import { getAddress } from './addresses'
+
+const SWAP_ROUTER_ADDRESS = getAddress('NEXT_PUBLIC_SWAP_ROUTER_ADDRESS')
 import SWAP_ROUTER_ABI from './abis/SwapRouter.json'
 
 export async function executeSwap(
