@@ -4,7 +4,11 @@ dotenv.config({ path: '.env.local' })
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  allowedDevOrigins: ['https://dex.funoncypherium.org'],
+  allowedDevOrigins: [
+    'https://dex.funoncypherium.org',
+    'http://dex.funoncypherium.org:3000',
+    'https://dex.funoncypherium.org:3000',
+  ],
   env: {
     NEXT_PUBLIC_WETH9_ADDRESS: process.env.NEXT_PUBLIC_WETH9_ADDRESS?.toLowerCase(),
     NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS: process.env.NEXT_PUBLIC_UNISWAP_V3_FACTORY_ADDRESS?.toLowerCase(),
