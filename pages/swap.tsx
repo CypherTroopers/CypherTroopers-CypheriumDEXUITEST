@@ -44,11 +44,12 @@ export default function Home() {
         try {
           const pools = await fetchPools(provider, addr, tokens)
           for (const p of pools) {
-            const exists = tokens.some(existing => existing.address.toLowerCase() === p.token.address.toLowerCase())
+            const exists = tokens.some(
+              existing => existing.address.toLowerCase() === p.token.address.toLowerCase()
+            )
             if (!exists) {
               addToken(p.token)
             }
-            addPool({ token0: addr, token1: p.token.address, fee: p.fee, pool: p.pool })
           }
         } catch {
           // ignore errors for detection
@@ -65,7 +66,10 @@ export default function Home() {
 
   const handleSwap = async () => {
     if (!provider || !amountIn) return
+
     const signer = await provider.getSigner()
+    if (!signer) return
+
     await executeSwap(signer, fromToken, toToken, amountIn, poolFee)
   }
 
@@ -80,9 +84,6 @@ export default function Home() {
     try {
       const pools = await fetchPools(provider, searchAddress, tokens)
       setFoundPools(pools)
-      pools.forEach(p => {
-        addPool({ token0: searchAddress, token1: p.token.address, fee: p.fee, pool: p.pool })
-      })
     } catch {
       setFoundPools([])
     } finally {
@@ -104,22 +105,36 @@ export default function Home() {
   }, [amountIn, fromToken, toToken, provider, poolFee])
 
   return (
-    <main style={{ padding: 20 }}>
+    <main
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        padding: 20,
+        flexDirection: 'column',
+      }}
+    >
       <h1>Cypherium DEX</h1>
-      <div>Connected: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '未接続'}</div>
+      <div>
+        Connected: {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '未接続'}
+      </div>
 
       <div style={{ marginTop: 30 }}>
         <div>
           <label>From:</label>
-          <select
+      
+           <select
             value={fromToken.symbol}
             onChange={(e) => {
-              const token = tokens.find(t => t.symbol === e.target.value)
+              const token = tokens.find((t) => t.symbol === e.target.value)
               if (token) setFromToken(token)
             }}
           >
-            {tokens.map(t => (
-              <option key={t.symbol} value={t.symbol}>{t.symbol}</option>
+            {tokens.map((t) => (
+              <option key={t.symbol} value={t.symbol}>
+                {t.symbol}
+              </option>
             ))}
           </select>
           <input
@@ -135,12 +150,14 @@ export default function Home() {
           <select
             value={toToken.symbol}
             onChange={(e) => {
-              const token = tokens.find(t => t.symbol === e.target.value)
+              const token = tokens.find((t) => t.symbol === e.target.value)
               if (token) setToToken(token)
             }}
           >
-            {tokens.map(t => (
-              <option key={t.symbol} value={t.symbol}>{t.symbol}</option>
+            {tokens.map((t) => (
+              <option key={t.symbol} value={t.symbol}>
+                {t.symbol}
+              </option>
             ))}
           </select>
         </div>
@@ -165,38 +182,25 @@ export default function Home() {
               type="text"
               placeholder="ERC20 address"
               value={searchAddress}
-              onChange={e => setSearchAddress(e.target.value)}
+              onChange={(e) => setSearchAddress(e.target.value)}
               style={{ marginRight: 10 }}
             />
             <button type="submit">Search</button>
           </form>
           {searching && <p>Searching...</p>}
-        {foundPools.length > 0 ? (
-          <ul>
-            {foundPools.map((p, i) => (
-              <li key={i}>
-                {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          !searching && searchAddress && <p>No pools found</p>
-        )}
+          {foundPools.length > 0 ? (
+            <ul>
+              {foundPools.map((p, i) => (
+                <li key={i}>
+                  {searchAddress} / {p.token.symbol} (fee {p.fee}) - {p.pool}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            !searching && searchAddress && <p>No pools found</p>
+          )}
+        </div>
       </div>
-
-      {pools.length > 0 && (
-        <div style={{ marginTop: 30 }}>
-          <h2>Known Pools</h2>
-          <ul>
-            {pools.map((p, i) => (
-              <li key={i}>
-                {p.token0}/{p.token1} (fee {p.fee}) - {p.pool}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-        </div>
     </main>
   )
 }
