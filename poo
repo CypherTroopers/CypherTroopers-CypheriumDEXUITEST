@@ -1,0 +1,201 @@
+
+/**
+ * Uniswap v3 pool test
+ * - ethers v6
+ * - ABI embedded directly in the script
+ */
+
+import { ethers } from "ethers";
+import * as dotenv from "dotenv";
+dotenv.config();
+
+async function main() {
+  //------------------------------------
+  // RPC & wallet
+  //------------------------------------
+
+  const rpcUrl = process.env.RPC_URL;
+  const privateKey = process.env.PRIVATE_KEY;
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const wallet = new ethers.Wallet(privateKey, provider);
+
+  console.log("Wallet:", wallet.address);
+
+  //------------------------------------
+  // Contract Addresses
+  //------------------------------------
+
+  const POSITION_MANAGER = "0x96c8C289fD5a8De8A7d8Bfddd6066b7CdC2d07a7";
+  const SWAP_ROUTER = "0xaab7a983fc7eca2fb601cca7489e11d3945c6301";
+
+  const tokenA = "0xd7Ba6C5A944c528de8F2ADad98D97303166B74D6";
+  const tokenB = "0x31F072395183717C51181f0E27651c50AAbAb8f9";
+
+  const FEE = 3000; // 0.3% pool
+
+  //------------------------------------
+  // ABIs - embedded directly
+  //------------------------------------
+
+  const ERC20_ABI = [
+    {
+      constant: true,
+      inputs: [],
+      name: "symbol",
+      outputs: [{ name: "", type: "string" }],
+      type: "function",
+    },
+    {
+      constant: true,
+      inputs: [],
+      name: "decimals",
+      outputs: [{ name: "", type: "uint8" }],
+      type: "function",
+    },
+    {
+      constant: false,
+      inputs: [
+        { name: "_spender", type: "address" },
+        { name: "_value", type: "uint256" },
+      ],
+      name: "approve",
+      outputs: [{ name: "", type: "bool" }],
+      type: "function",
+    },
+  ];
+
+  const POSITION_MANAGER_ABI = [
+    {
+      inputs: [
+        {
+          components: [
+            { internalType: "address", name: "token0", type: "address" },
+            { internalType: "address", name: "token1", type: "address" },
+            { internalType: "uint24", name: "fee", type: "uint24" },
+            { internalType: "int24", name: "tickLower", type: "int24" },
+            { internalType: "int24", name: "tickUpper", type: "int24" },
+            { internalType: "uint256", name: "amount0Desired", type: "uint256" },
+            { internalType: "uint256", name: "amount1Desired", type: "uint256" },
+            { internalType: "uint256", name: "amount0Min", type: "uint256" },
+            { internalType: "uint256", name: "amount1Min", type: "uint256" },
+            { internalType: "address", name: "recipient", type: "address" },
+            { internalType: "uint256", name: "deadline", type: "uint256" },
+          ],
+          internalType: "struct INonfungiblePositionManager.MintParams",
+          name: "params",
+          type: "tuple",
+        },
+      ],
+      name: "mint",
+      outputs: [
+        { internalType: "uint256", name: "tokenId", type: "uint256" },
+        { internalType: "uint128", name: "liquidity", type: "uint128" },
+        { internalType: "uint256", name: "amount0", type: "uint256" },
+        { internalType: "uint256", name: "amount1", type: "uint256" },
+      ],
+      stateMutability: "payable",
+      type: "function",
+    },
+  ];
+
+  const SWAP_ROUTER_ABI = [
+    {
+      inputs: [
+        {
+          components: [
+            { internalType: "address", name: "tokenIn", type: "address" },
+            { internalType: "address", name: "tokenOut", type: "address" },
+            { internalType: "uint24", name: "fee", type: "uint24" },
+            { internalType: "address", name: "recipient", type: "address" },
+            { internalType: "uint256", name: "deadline", type: "uint256" },
+            { internalType: "uint256", name: "amountIn", type: "uint256" },
+            { internalType: "uint256", name: "amountOutMinimum", type: "uint256" },
+            { internalType: "uint160", name: "sqrtPriceLimitX96", type: "uint160" },
+          ],
+          internalType: "struct ISwapRouter.ExactInputSingleParams",
+          name: "params",
+          type: "tuple",
+        },
+      ],
+      name: "exactInputSingle",
+      outputs: [{ internalType: "uint256", name: "amountOut", type: "uint256" }],
+      stateMutability: "payable",
+      type: "function",
+    },
+  ];
+
+  //------------------------------------
+  // Instantiate contracts
+  //------------------------------------
+
+  const ercA = new ethers.Contract(tokenA, ERC20_ABI, wallet);
+  const ercB = new ethers.Contract(tokenB, ERC20_ABI, wallet);
+  const positionManager = new ethers.Contract(POSITION_MANAGER, POSITION_MANAGER_ABI, wallet);
+  const swapRouter = new ethers.Contract(SWAP_ROUTER, SWAP_ROUTER_ABI, wallet);
+
+  //------------------------------------
+  // Approve tokens to Position Manager
+  //------------------------------------
+
+  const approveAmount = ethers.parseUnits("10", 18);
+
+  console.log("Approving tokenA...");
+  await (await ercA.approve(POSITION_MANAGER, approveAmount)).wait();
+  console.log("Approving tokenB...");
+  await (await ercB.approve(POSITION_MANAGER, approveAmount)).wait();
+
+  //------------------------------------
+  // Mint Position
+  //------------------------------------
+
+  console.log("Minting position...");
+
+  const params = {
+    token0: tokenA,
+    token1: tokenB,
+    fee: FEE,
+    tickLower: -600,
+    tickUpper: 600,
+    amount0Desired: ethers.parseUnits("1", 18),
+    amount1Desired: ethers.parseUnits("1", 18),
+    amount0Min: 0,
+    amount1Min: 0,
+    recipient: wallet.address,
+    deadline: Math.floor(Date.now() / 1000) + 1800,
+  };
+
+  const tx = await positionManager.mint(params, { gasLimit: 5_000_000 });
+  const receipt = await tx.wait();
+
+  console.log("Mint transaction hash:", receipt.transactionHash);
+
+  //------------------------------------
+  // Swap tokenA -> tokenB
+  //------------------------------------
+
+  console.log("Swapping tokenA -> tokenB...");
+
+  await (await ercA.approve(SWAP_ROUTER, approveAmount)).wait();
+
+  const swapParams = {
+    tokenIn: tokenA,
+    tokenOut: tokenB,
+    fee: FEE,
+    recipient: wallet.address,
+    deadline: Math.floor(Date.now() / 1000) + 1800,
+    amountIn: ethers.parseUnits("0.5", 18),
+    amountOutMinimum: 0,
+    sqrtPriceLimitX96: 0,
+  };
+
+  const tx2 = await swapRouter.exactInputSingle(swapParams, { gasLimit: 5_000_000 });
+  const receipt2 = await tx2.wait();
+
+  console.log("Swap done. Tx hash:", receipt2.transactionHash);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

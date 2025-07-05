@@ -1,15 +1,15 @@
 {
   "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/api/hello": "pages/api/hello.js",
   "/api/pools": "pages/api/pools.js",
+  "/api/tokens": "pages/api/tokens.js",
   "/dashboard": "pages/dashboard.html",
   "/": "pages/index.html",
   "/pools": "pages/pools.html",
   "/remove": "pages/remove.html",
-  "/tokens": "pages/tokens.html",
-  "/api/hello": "pages/api/hello.js",
   "/swap": "pages/swap.html",
-  "/api/tokens": "pages/api/tokens.js",
+  "/tokens": "pages/tokens.html",
+  "/_error": "pages/_error.js",
   "/404": "pages/404.html"
 }

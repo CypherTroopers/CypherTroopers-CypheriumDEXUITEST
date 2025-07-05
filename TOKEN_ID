@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from web3 import Web3
+from dotenv import load_dotenv
+
+load_dotenv()
+
+RPC_URL = os.getenv("RPC_URL")
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+ACCOUNT_ADDRESS = os.getenv("YOUR_WALLET_ADDRESS")
+
+if ACCOUNT_ADDRESS is None:
+    raise Exception("YOUR_WALLET_ADDRESS が .env に設定されていません。")
+
+w3 = Web3(Web3.HTTPProvider(RPC_URL))
+
+print("Connected:", w3.is_connected())
+
+ACCOUNT_ADDRESS = w3.to_checksum_address(ACCOUNT_ADDRESS)
+
+POSITION_MANAGER = w3.to_checksum_address("0x96c8C289fD5a8De8A7d8Bfddd6066b7CdC2d07a7")
+
+# ERC721 Transfer イベントのトピック
+TRANSFER_TOPIC = w3.keccak(text="Transfer(address,address,uint256)").hex()
+
+# ★ ここをあなたの mint tx hash に書き換える
+tx_hash_mint = "0xc0b2fc331c078e5cc3d7a4b3c3cc219ebc6e175f55a13c53d8bf4697df1a7c64"
+
+receipt = w3.eth.get_transaction_receipt(tx_hash_mint)
+
+tokenId = None
+
+for log in receipt["logs"]:
+    if log["address"].lower() == POSITION_MANAGER.lower():
+        if log["topics"][0].hex() == TRANSFER_TOPIC:
+            tokenId_hex = log["topics"][3].hex()
+            tokenId = int(tokenId_hex, 16)
+            print("✅ tokenId found:", tokenId)
+
+if tokenId is None:
+    print("❌ tokenId not found in logs!")
+else:
+    print("Minted tokenId:", tokenId)
